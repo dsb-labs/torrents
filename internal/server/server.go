@@ -7,10 +7,13 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
+
+	"github.com/dsb-labs/torrents/internal/server/database"
 )
 
 const shutdownTimeout = 30 * time.Second
@@ -23,7 +26,24 @@ func Run(ctx context.Context, config Config) error {
 	}
 
 	logger := newLogger(config.Logging)
-	logger.With("address", config.HTTP.Address).Info("starting torrents server")
+	logger.With("address", config.HTTP.Address).Debug("starting torrents server")
+
+	if err := os.MkdirAll(config.Data.Directory, 0o755); err != nil {
+		return fmt.Errorf("failed to create data directory: %w", err)
+	}
+
+	db, err := database.Open(ctx, database.Config{
+		Logger: logger.With("component", "database"),
+		Path:   filepath.Join(config.Data.Directory, "state.db"),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to open database: %w", err)
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.With("error", err).Error("failed to close database")
+		}
+	}()
 
 	mux := http.NewServeMux()
 
@@ -46,7 +66,7 @@ func Run(ctx context.Context, config Config) error {
 	g.Go(func() error {
 		<-ctx.Done()
 
-		logger.Info("shutting down http server")
+		logger.Debug("shutting down http server")
 
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()

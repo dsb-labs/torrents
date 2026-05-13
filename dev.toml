@@ -1,5 +1,8 @@
 [http]
 address = "127.0.0.1:7373"
 
+[data]
+directory = "./data"
+
 [logging]
 level = "debug"

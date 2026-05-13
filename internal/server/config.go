@@ -4,6 +4,8 @@ package server
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -14,6 +16,8 @@ type (
 	Config struct {
 		// HTTP server settings.
 		HTTP HTTPConfig `toml:"http"`
+		// On-disk state settings.
+		Data DataConfig `toml:"data"`
 		// Logging settings.
 		Logging LoggingConfig `toml:"logging"`
 	}
@@ -22,6 +26,13 @@ type (
 	HTTPConfig struct {
 		// The address the HTTP server binds to, in host:port form.
 		Address string `toml:"address"`
+	}
+
+	// The DataConfig type contains configuration for the server's on-disk state.
+	DataConfig struct {
+		// The directory under which the SQLite database, torrent metainfo, and
+		// downloaded content are stored.
+		Directory string `toml:"directory"`
 	}
 
 	// The LoggingConfig type contains configuration for application logging.
@@ -38,10 +49,22 @@ func DefaultConfig() Config {
 		HTTP: HTTPConfig{
 			Address: ":7373",
 		},
+		Data: DataConfig{
+			Directory: defaultDataDir(),
+		},
 		Logging: LoggingConfig{
 			Level: "info",
 		},
 	}
+}
+
+func defaultDataDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "data"
+	}
+
+	return filepath.Join(home, ".local", "share", "torrents")
 }
 
 // LoadConfig the configuration file at the specified path. The configuration file is expected in TOML format.
@@ -58,6 +81,7 @@ func LoadConfig(path string) (Config, error) {
 func (c *Config) Validate() error {
 	return errors.Join(
 		c.HTTP.validate(),
+		c.Data.validate(),
 		c.Logging.validate(),
 	)
 }
@@ -65,6 +89,14 @@ func (c *Config) Validate() error {
 func (c HTTPConfig) validate() error {
 	if c.Address == "" {
 		return errors.New("http address is required")
+	}
+
+	return nil
+}
+
+func (c DataConfig) validate() error {
+	if c.Directory == "" {
+		return errors.New("data directory is required")
 	}
 
 	return nil

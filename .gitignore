@@ -1,5 +1,6 @@
 /dist/
 /torrents
+/data/
 *.test
 *.out
 .idea/

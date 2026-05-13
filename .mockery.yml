@@ -1,0 +1,7 @@
+filename: mocks_test.go
+log-level: error
+pkgname: '{{.SrcPackageName}}_test'
+packages:
+  github.com/dsb-labs/torrents/internal/server/torrent:
+    config:
+      all: true

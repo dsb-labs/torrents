@@ -14,9 +14,8 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/dsb-labs/torrents/internal/server/database"
+	"github.com/dsb-labs/torrents/internal/server/torrent"
 )
-
-const shutdownTimeout = 30 * time.Second
 
 // Run starts the torrents server using the given configuration and blocks
 // until the context is cancelled or the server stops with an error.
@@ -33,17 +32,19 @@ func Run(ctx context.Context, config Config) error {
 	}
 
 	db, err := database.Open(ctx, database.Config{
-		Logger: logger.With("component", "database"),
+		Logger: logger,
 		Path:   filepath.Join(config.Data.Directory, "state.db"),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			logger.With("error", err).Error("failed to close database")
-		}
-	}()
+	defer db.Close()
+
+	client, err := torrent.NewClient(filepath.Join(config.Data.Directory, "downloads"))
+	if err != nil {
+		return fmt.Errorf("failed to start torrent client: %w", err)
+	}
+	defer client.Close()
 
 	mux := http.NewServeMux()
 
@@ -68,7 +69,7 @@ func Run(ctx context.Context, config Config) error {
 
 		logger.Debug("shutting down http server")
 
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		if err := server.Shutdown(shutdownCtx); err != nil {

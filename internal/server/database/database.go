@@ -36,6 +36,8 @@ type Config struct {
 // pending migrations. The returned pool must be closed by the caller when no
 // longer needed.
 func Open(ctx context.Context, config Config) (*sql.DB, error) {
+	logger := config.Logger.With("component", "database")
+
 	db, err := sql.Open("sqlite", config.Path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
@@ -51,7 +53,7 @@ func Open(ctx context.Context, config Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
-	config.Logger.With("path", config.Path).Debug("database opened")
+	logger.With("path", config.Path).Debug("database opened")
 
 	return db, nil
 }

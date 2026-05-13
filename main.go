@@ -1,4 +1,6 @@
 // Package main provides the entrypoint to the torrents binary.
+//
+//go:generate go tool mockery
 package main
 
 import (

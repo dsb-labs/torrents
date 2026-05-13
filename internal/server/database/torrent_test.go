@@ -1,7 +1,6 @@
 package database_test
 
 import (
-	"io"
 	"log/slog"
 	"path/filepath"
 	"testing"
@@ -199,12 +198,9 @@ func TestTorrentRepository_SetPaused(t *testing.T) {
 func newTestRepository(t *testing.T) *database.TorrentRepository {
 	t.Helper()
 
-	path := filepath.Join(t.TempDir(), "test.db")
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-
 	db, err := database.Open(t.Context(), database.Config{
-		Logger: logger,
-		Path:   path,
+		Logger: newTestLogger(t),
+		Path:   filepath.Join(t.TempDir(), "test.db"),
 	})
 	require.NoError(t, err)
 
@@ -213,4 +209,18 @@ func newTestRepository(t *testing.T) *database.TorrentRepository {
 	})
 
 	return database.NewTorrentRepository(db)
+}
+
+func newTestLogger(t *testing.T) *slog.Logger {
+	t.Helper()
+
+	level := slog.LevelError
+	if testing.Verbose() {
+		level = slog.LevelDebug
+	}
+
+	return slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{
+		AddSource: testing.Verbose(),
+		Level:     level,
+	}))
 }

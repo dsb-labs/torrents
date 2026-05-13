@@ -8,3 +8,6 @@ packages:
   github.com/dsb-labs/torrents/internal/server/service:
     config:
       all: true
+  github.com/dsb-labs/torrents/internal/server/api:
+    config:
+      all: true

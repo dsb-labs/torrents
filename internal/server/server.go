@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/dsb-labs/torrents/internal/server/api"
 	"github.com/dsb-labs/torrents/internal/server/database"
 	"github.com/dsb-labs/torrents/internal/server/service"
 	"github.com/dsb-labs/torrents/internal/server/torrent"
@@ -54,29 +55,31 @@ func Run(ctx context.Context, config Config) error {
 
 	torrents := service.NewTorrentService(logger, engine, database.NewTorrentRepository(db))
 
-	if err := torrents.Restore(ctx); err != nil {
+	if err = torrents.Restore(ctx); err != nil {
 		return fmt.Errorf("failed to restore torrents: %w", err)
 	}
 
 	mux := http.NewServeMux()
-	_ = torrents
+	api.NewTorrentAPI(torrents).Register(mux)
+
+	var handler http.Handler = mux
+	middlewares := []func(http.Handler) http.Handler{
+		api.Recovery(logger),
+		api.Logging(logger),
+	}
+	for _, m := range middlewares {
+		handler = m(handler)
+	}
 
 	server := &http.Server{
 		Addr:              config.HTTP.Address,
-		Handler:           mux,
+		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	g.Go(func() error {
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			return fmt.Errorf("http server failed: %w", err)
-		}
-
-		return nil
-	})
-
+	g.Go(server.ListenAndServe)
 	g.Go(func() error {
 		<-ctx.Done()
 
@@ -85,14 +88,15 @@ func Run(ctx context.Context, config Config) error {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			return fmt.Errorf("failed to shut down http server: %w", err)
-		}
-
-		return nil
+		return server.Shutdown(shutdownCtx)
 	})
 
-	return g.Wait()
+	err = g.Wait()
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
+
+	return err
 }
 
 func newLogger(config LoggingConfig) *slog.Logger {

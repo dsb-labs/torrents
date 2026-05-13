@@ -36,7 +36,7 @@ func TestTorrentRepository_Create(t *testing.T) {
 		assert.Equal(t, "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567", got.Magnet)
 		assert.Equal(t, "test torrent", got.Label)
 		assert.Equal(t, "/tmp/downloads", got.TargetDir)
-		assert.False(t, got.IsPaused)
+		assert.False(t, got.Paused)
 		assert.WithinDuration(t, time.Now().UTC(), got.CreatedAt, 5*time.Second)
 		assert.False(t, got.CreatedAt.Before(before))
 		assert.Equal(t, got.CreatedAt, got.UpdatedAt)
@@ -52,7 +52,7 @@ func TestTorrentRepository_Create(t *testing.T) {
 			InfoHash:  "dddddddddddddddddddddddddddddddddddddddd",
 			Magnet:    "magnet:?xt=urn:btih:dddddddddddddddddddddddddddddddddddddddd",
 			TargetDir: "/tmp/downloads",
-			IsPaused:  true,
+			Paused:  true,
 			CreatedAt: bogus,
 			UpdatedAt: bogus,
 		}))
@@ -60,7 +60,7 @@ func TestTorrentRepository_Create(t *testing.T) {
 		got, err := repo.Get(ctx, "dddddddddddddddddddddddddddddddddddddddd")
 		require.NoError(t, err)
 
-		assert.False(t, got.IsPaused, "Create must default IsPaused to false")
+		assert.False(t, got.Paused, "Create must default Paused to false")
 		assert.WithinDuration(t, time.Now().UTC(), got.CreatedAt, 5*time.Second, "Create must assign CreatedAt")
 		assert.WithinDuration(t, time.Now().UTC(), got.UpdatedAt, 5*time.Second, "Create must assign UpdatedAt")
 	})
@@ -178,13 +178,13 @@ func TestTorrentRepository_SetPaused(t *testing.T) {
 
 		got, err := repo.Get(ctx, hash)
 		require.NoError(t, err)
-		assert.True(t, got.IsPaused)
+		assert.True(t, got.Paused)
 
 		require.NoError(t, repo.SetPaused(ctx, hash, false))
 
 		got, err = repo.Get(ctx, hash)
 		require.NoError(t, err)
-		assert.False(t, got.IsPaused)
+		assert.False(t, got.Paused)
 	})
 
 	t.Run("missing", func(t *testing.T) {

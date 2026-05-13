@@ -116,7 +116,7 @@ func TestTorrentService_Get(t *testing.T) {
 			Magnet:    "magnet:?xt=urn:btih:" + testInfoHash,
 			Label:     "iso",
 			TargetDir: "/data",
-			IsPaused:  false,
+			Paused:  false,
 			CreatedAt: time.Unix(1700000000, 0).UTC(),
 			UpdatedAt: time.Unix(1700000000, 0).UTC(),
 		}
@@ -282,8 +282,8 @@ func TestTorrentService_Restore(t *testing.T) {
 		hashB := "2222222222222222222222222222222222222222"
 
 		repo.EXPECT().List(mock.Anything).Return([]database.Torrent{
-			{InfoHash: hashA, Magnet: "magnet:?xt=urn:btih:" + hashA, IsPaused: false},
-			{InfoHash: hashB, Magnet: "magnet:?xt=urn:btih:" + hashB, IsPaused: true},
+			{InfoHash: hashA, Magnet: "magnet:?xt=urn:btih:" + hashA, Paused: false},
+			{InfoHash: hashB, Magnet: "magnet:?xt=urn:btih:" + hashB, Paused: true},
 		}, nil).Once()
 		engine.EXPECT().AddMagnet(mock.Anything, "magnet:?xt=urn:btih:"+hashA).Return(torrent.InfoHash(hashA), nil).Once()
 		engine.EXPECT().AddMagnet(mock.Anything, "magnet:?xt=urn:btih:"+hashB).Return(torrent.InfoHash(hashB), nil).Once()

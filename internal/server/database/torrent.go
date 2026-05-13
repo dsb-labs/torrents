@@ -27,7 +27,7 @@ type (
 		// The filesystem directory the torrent's content is written into.
 		TargetDir string
 		// Whether the torrent is currently paused.
-		IsPaused bool
+		Paused bool
 		// The time the torrent was added.
 		CreatedAt time.Time
 		// The time the torrent's row was last modified.
@@ -45,7 +45,7 @@ func NewTorrentRepository(db *sql.DB) *TorrentRepository {
 	return &TorrentRepository{db: db}
 }
 
-// Create inserts t. IsPaused, CreatedAt, and UpdatedAt on the input are ignored:
+// Create inserts t. Paused, CreatedAt, and UpdatedAt on the input are ignored:
 // new torrents start unpaused and the repository assigns the timestamps.
 // Returns ErrTorrentAlreadyExists when a torrent with the same info hash is already present.
 func (r *TorrentRepository) Create(ctx context.Context, t Torrent) error {
@@ -86,7 +86,7 @@ func (r *TorrentRepository) Get(ctx context.Context, infoHash string) (Torrent, 
 		&t.Magnet,
 		&t.Label,
 		&t.TargetDir,
-		&t.IsPaused,
+		&t.Paused,
 		&createdAt,
 		&updatedAt,
 	)
@@ -131,7 +131,7 @@ func (r *TorrentRepository) List(ctx context.Context) ([]Torrent, error) {
 			&t.Magnet,
 			&t.Label,
 			&t.TargetDir,
-			&t.IsPaused,
+			&t.Paused,
 			&createdAt,
 			&updatedAt,
 		); err != nil {

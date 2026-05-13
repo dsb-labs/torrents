@@ -63,7 +63,7 @@ type (
 		// The filesystem directory the torrent's content is written into.
 		TargetDir string
 		// Whether the torrent is paused.
-		IsPaused bool
+		Paused bool
 		// The time the torrent was added.
 		CreatedAt time.Time
 		// The time the torrent's persisted state was last modified.
@@ -208,8 +208,8 @@ func (s *TorrentService) Restore(ctx context.Context) error {
 			continue
 		}
 
-		if row.IsPaused {
-			if err := s.engine.Pause(ctx, hash); err != nil {
+		if row.Paused {
+			if err = s.engine.Pause(ctx, hash); err != nil {
 				s.logger.With("info_hash", row.InfoHash, "error", err).Error("failed to pause restored torrent")
 			}
 		}
@@ -273,7 +273,7 @@ func (s *TorrentService) hydrate(row database.Torrent) Torrent {
 		Magnet:    row.Magnet,
 		Label:     row.Label,
 		TargetDir: row.TargetDir,
-		IsPaused:  row.IsPaused,
+		Paused:  row.Paused,
 		CreatedAt: row.CreatedAt,
 		UpdatedAt: row.UpdatedAt,
 	}

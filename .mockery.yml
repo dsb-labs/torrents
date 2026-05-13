@@ -5,3 +5,6 @@ packages:
   github.com/dsb-labs/torrents/internal/server/torrent:
     config:
       all: true
+  github.com/dsb-labs/torrents/internal/server/service:
+    config:
+      all: true

@@ -14,6 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/dsb-labs/torrents/internal/server/database"
+	"github.com/dsb-labs/torrents/internal/server/service"
 	"github.com/dsb-labs/torrents/internal/server/torrent"
 )
 
@@ -46,7 +47,19 @@ func Run(ctx context.Context, config Config) error {
 	}
 	defer client.Close()
 
+	engine := torrent.New(torrent.Config{
+		Logger: logger,
+		Client: client,
+	})
+
+	torrents := service.NewTorrentService(logger, engine, database.NewTorrentRepository(db))
+
+	if err := torrents.Restore(ctx); err != nil {
+		return fmt.Errorf("failed to restore torrents: %w", err)
+	}
+
 	mux := http.NewServeMux()
+	_ = torrents
 
 	server := &http.Server{
 		Addr:              config.HTTP.Address,

@@ -9,6 +9,8 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
+
+	"github.com/dsb-labs/torrents/cmd/serve"
 )
 
 func main() {
@@ -27,6 +29,10 @@ func main() {
 	if info, ok := debug.ReadBuildInfo(); ok {
 		cmd.Version = info.Main.Version
 	}
+
+	cmd.AddCommand(
+		serve.Command(),
+	)
 
 	if err := cmd.ExecuteContext(ctx); err != nil {
 		os.Exit(1)

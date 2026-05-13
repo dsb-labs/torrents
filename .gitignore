@@ -1,0 +1,6 @@
+/dist/
+/torrents
+*.test
+*.out
+.idea/
+.vscode/

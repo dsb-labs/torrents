@@ -120,41 +120,6 @@ func (e *Engine) Remove(ctx context.Context, hash InfoHash) error {
 	return nil
 }
 
-// Pause stops data download and upload for the torrent identified by hash. The
-// torrent remains tracked by the engine. Returns ErrNotFound when the
-// engine isn't tracking the given torrent.
-func (e *Engine) Pause(ctx context.Context, hash InfoHash) error {
-	t, ok, err := e.find(hash)
-	switch {
-	case err != nil:
-		return err
-	case !ok:
-		return ErrNotFound
-	}
-
-	t.DisallowDataDownload()
-	t.DisallowDataUpload()
-
-	return nil
-}
-
-// Resume re-enables data download and upload for the torrent identified by hash.
-// Returns ErrNotFound when the engine isn't tracking the given torrent.
-func (e *Engine) Resume(ctx context.Context, hash InfoHash) error {
-	t, ok, err := e.find(hash)
-	switch {
-	case err != nil:
-		return err
-	case !ok:
-		return ErrNotFound
-	}
-
-	t.AllowDataDownload()
-	t.AllowDataUpload()
-
-	return nil
-}
-
 // Snapshot returns the current state of the torrent identified by hash.
 // Returns ErrNotFound when the engine isn't tracking the given torrent.
 func (e *Engine) Snapshot(hash InfoHash) (Progress, error) {

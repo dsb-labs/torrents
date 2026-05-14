@@ -29,10 +29,6 @@ type (
 		AddFile(ctx context.Context, r io.Reader) (torrent.InfoHash, error)
 		// Remove should stop tracking the torrent identified by hash.
 		Remove(ctx context.Context, hash torrent.InfoHash) error
-		// Pause should stop data transfer for the torrent identified by hash.
-		Pause(ctx context.Context, hash torrent.InfoHash) error
-		// Resume should re-enable data transfer for the torrent identified by hash.
-		Resume(ctx context.Context, hash torrent.InfoHash) error
 		// Snapshot should return the current live state of the torrent identified by hash.
 		Snapshot(hash torrent.InfoHash) (torrent.Progress, error)
 	}
@@ -179,22 +175,60 @@ func (s *TorrentService) Remove(ctx context.Context, infoHash string) error {
 	return nil
 }
 
-// Pause stops data transfer for the torrent identified by infoHash and records
-// the paused state. Returns ErrTorrentNotFound when no such torrent is managed.
+// Pause stops the torrent identified by infoHash by removing it from the engine
+// and recording the paused state in the repository. Returns ErrTorrentNotFound
+// when no such torrent is managed.
 func (s *TorrentService) Pause(ctx context.Context, infoHash string) error {
-	return s.setPaused(ctx, infoHash, true)
+	err := s.engine.Remove(ctx, torrent.InfoHash(infoHash))
+	switch {
+	case errors.Is(err, torrent.ErrNotFound):
+		// Engine wasn't tracking it (already paused or never added); fall through.
+	case err != nil:
+		return fmt.Errorf("failed to remove torrent from engine: %w", err)
+	}
+
+	err = s.torrents.SetPaused(ctx, infoHash, true)
+	switch {
+	case errors.Is(err, database.ErrTorrentNotFound):
+		return ErrTorrentNotFound
+	case err != nil:
+		return fmt.Errorf("failed to persist torrent state: %w", err)
+	}
+
+	return nil
 }
 
-// Resume re-enables data transfer for the torrent identified by infoHash and
-// records the unpaused state. Returns ErrTorrentNotFound when no such torrent is managed.
+// Resume re-adds the torrent identified by infoHash to the engine using its
+// persisted magnet URI and records the unpaused state. Returns ErrTorrentNotFound
+// when no such torrent is managed.
 func (s *TorrentService) Resume(ctx context.Context, infoHash string) error {
-	return s.setPaused(ctx, infoHash, false)
+	row, err := s.torrents.Get(ctx, infoHash)
+	switch {
+	case errors.Is(err, database.ErrTorrentNotFound):
+		return ErrTorrentNotFound
+	case err != nil:
+		return fmt.Errorf("failed to load torrent: %w", err)
+	}
+
+	if _, err := s.engine.AddMagnet(ctx, row.Magnet); err != nil {
+		return fmt.Errorf("failed to re-add torrent to engine: %w", err)
+	}
+
+	err = s.torrents.SetPaused(ctx, infoHash, false)
+	switch {
+	case errors.Is(err, database.ErrTorrentNotFound):
+		return ErrTorrentNotFound
+	case err != nil:
+		return fmt.Errorf("failed to persist torrent state: %w", err)
+	}
+
+	return nil
 }
 
-// Restore re-adds every persisted torrent to the engine. Intended to be called
-// once during server startup. Individual torrents that fail to restore are
-// logged and skipped; Restore returns an error only when the repository read
-// itself fails.
+// Restore re-adds every non-paused persisted torrent to the engine. Intended to
+// be called once during server startup. Paused torrents stay DB-only until the
+// user resumes them. Individual torrents that fail to restore are logged and
+// skipped; Restore returns an error only when the repository read itself fails.
 func (s *TorrentService) Restore(ctx context.Context) error {
 	rows, err := s.torrents.List(ctx)
 	if err != nil {
@@ -202,16 +236,12 @@ func (s *TorrentService) Restore(ctx context.Context) error {
 	}
 
 	for _, row := range rows {
-		hash, err := s.engine.AddMagnet(ctx, row.Magnet)
-		if err != nil {
-			s.logger.With("info_hash", row.InfoHash, "error", err).Error("failed to restore torrent to engine")
+		if row.Paused {
 			continue
 		}
 
-		if row.Paused {
-			if err = s.engine.Pause(ctx, hash); err != nil {
-				s.logger.With("info_hash", row.InfoHash, "error", err).Error("failed to pause restored torrent")
-			}
+		if _, err := s.engine.AddMagnet(ctx, row.Magnet); err != nil {
+			s.logger.With("info_hash", row.InfoHash, "error", err).Error("failed to restore torrent to engine")
 		}
 	}
 
@@ -235,45 +265,13 @@ func (s *TorrentService) persist(ctx context.Context, hash torrent.InfoHash, mag
 	return s.Get(ctx, string(hash))
 }
 
-func (s *TorrentService) setPaused(ctx context.Context, infoHash string, paused bool) error {
-	hash := torrent.InfoHash(infoHash)
-
-	if paused {
-		err := s.engine.Pause(ctx, hash)
-		switch {
-		case errors.Is(err, torrent.ErrNotFound):
-			return ErrTorrentNotFound
-		case err != nil:
-			return fmt.Errorf("failed to pause torrent: %w", err)
-		}
-	} else {
-		err := s.engine.Resume(ctx, hash)
-		switch {
-		case errors.Is(err, torrent.ErrNotFound):
-			return ErrTorrentNotFound
-		case err != nil:
-			return fmt.Errorf("failed to resume torrent: %w", err)
-		}
-	}
-
-	err := s.torrents.SetPaused(ctx, infoHash, paused)
-	switch {
-	case errors.Is(err, database.ErrTorrentNotFound):
-		return ErrTorrentNotFound
-	case err != nil:
-		return fmt.Errorf("failed to persist torrent state: %w", err)
-	}
-
-	return nil
-}
-
 func (s *TorrentService) hydrate(row database.Torrent) Torrent {
 	t := Torrent{
 		InfoHash:  row.InfoHash,
 		Magnet:    row.Magnet,
 		Label:     row.Label,
 		TargetDir: row.TargetDir,
-		Paused:  row.Paused,
+		Paused:    row.Paused,
 		CreatedAt: row.CreatedAt,
 		UpdatedAt: row.UpdatedAt,
 	}

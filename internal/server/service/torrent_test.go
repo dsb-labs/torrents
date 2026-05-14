@@ -348,14 +348,22 @@ func TestTorrentService_Pause(t *testing.T) {
 		{
 			Name: "success",
 			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
-				engine.EXPECT().Pause(mock.Anything, torrent.InfoHash(testInfoHash)).Return(nil).Once()
+				engine.EXPECT().Remove(mock.Anything, torrent.InfoHash(testInfoHash)).Return(nil).Once()
 				repo.EXPECT().SetPaused(mock.Anything, testInfoHash, true).Return(nil).Once()
 			},
 		},
 		{
-			Name: "not found in engine",
+			Name: "engine already missing still flips paused",
 			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
-				engine.EXPECT().Pause(mock.Anything, torrent.InfoHash(testInfoHash)).Return(torrent.ErrNotFound).Once()
+				engine.EXPECT().Remove(mock.Anything, torrent.InfoHash(testInfoHash)).Return(torrent.ErrNotFound).Once()
+				repo.EXPECT().SetPaused(mock.Anything, testInfoHash, true).Return(nil).Once()
+			},
+		},
+		{
+			Name: "row missing",
+			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
+				engine.EXPECT().Remove(mock.Anything, torrent.InfoHash(testInfoHash)).Return(torrent.ErrNotFound).Once()
+				repo.EXPECT().SetPaused(mock.Anything, testInfoHash, true).Return(database.ErrTorrentNotFound).Once()
 			},
 			ExpectErr: service.ErrTorrentNotFound,
 		},
@@ -389,9 +397,21 @@ func TestTorrentService_Resume(t *testing.T) {
 		{
 			Name: "success",
 			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
-				engine.EXPECT().Resume(mock.Anything, torrent.InfoHash(testInfoHash)).Return(nil).Once()
+				repo.EXPECT().Get(mock.Anything, testInfoHash).Return(database.Torrent{
+					InfoHash: testInfoHash,
+					Magnet:   "magnet:?xt=urn:btih:" + testInfoHash,
+					Paused:   true,
+				}, nil).Once()
+				engine.EXPECT().AddMagnet(mock.Anything, "magnet:?xt=urn:btih:"+testInfoHash).Return(torrent.InfoHash(testInfoHash), nil).Once()
 				repo.EXPECT().SetPaused(mock.Anything, testInfoHash, false).Return(nil).Once()
 			},
+		},
+		{
+			Name: "row missing",
+			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
+				repo.EXPECT().Get(mock.Anything, testInfoHash).Return(database.Torrent{}, database.ErrTorrentNotFound).Once()
+			},
+			ExpectErr: service.ErrTorrentNotFound,
 		},
 	}
 
@@ -425,15 +445,13 @@ func TestTorrentService_Restore(t *testing.T) {
 		ExpectErrContains string
 	}{
 		{
-			Name: "success",
+			Name: "success skips paused rows",
 			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
 				repo.EXPECT().List(mock.Anything).Return([]database.Torrent{
 					{InfoHash: hashA, Magnet: "magnet:?xt=urn:btih:" + hashA, Paused: false},
 					{InfoHash: hashB, Magnet: "magnet:?xt=urn:btih:" + hashB, Paused: true},
 				}, nil).Once()
 				engine.EXPECT().AddMagnet(mock.Anything, "magnet:?xt=urn:btih:"+hashA).Return(torrent.InfoHash(hashA), nil).Once()
-				engine.EXPECT().AddMagnet(mock.Anything, "magnet:?xt=urn:btih:"+hashB).Return(torrent.InfoHash(hashB), nil).Once()
-				engine.EXPECT().Pause(mock.Anything, torrent.InfoHash(hashB)).Return(nil).Once()
 			},
 		},
 		{

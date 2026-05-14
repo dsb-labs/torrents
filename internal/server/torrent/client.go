@@ -43,14 +43,6 @@ type (
 		BytesCompleted() int64
 		// Stats should return live peer / transfer statistics.
 		Stats() anacrolix.TorrentStats
-		// DisallowDataDownload should stop the torrent receiving data from peers.
-		DisallowDataDownload()
-		// AllowDataDownload should resume the torrent receiving data from peers.
-		AllowDataDownload()
-		// DisallowDataUpload should stop the torrent sending data to peers.
-		DisallowDataUpload()
-		// AllowDataUpload should resume the torrent sending data to peers.
-		AllowDataUpload()
 	}
 
 	anacrolixClient struct {

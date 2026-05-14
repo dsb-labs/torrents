@@ -172,63 +172,6 @@ func (_c *MockTorrentEngine_AddMagnet_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
-// Pause provides a mock function for the type MockTorrentEngine
-func (_mock *MockTorrentEngine) Pause(ctx context.Context, hash torrent.InfoHash) error {
-	ret := _mock.Called(ctx, hash)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Pause")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, torrent.InfoHash) error); ok {
-		r0 = returnFunc(ctx, hash)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// MockTorrentEngine_Pause_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Pause'
-type MockTorrentEngine_Pause_Call struct {
-	*mock.Call
-}
-
-// Pause is a helper method to define mock.On call
-//   - ctx context.Context
-//   - hash torrent.InfoHash
-func (_e *MockTorrentEngine_Expecter) Pause(ctx interface{}, hash interface{}) *MockTorrentEngine_Pause_Call {
-	return &MockTorrentEngine_Pause_Call{Call: _e.mock.On("Pause", ctx, hash)}
-}
-
-func (_c *MockTorrentEngine_Pause_Call) Run(run func(ctx context.Context, hash torrent.InfoHash)) *MockTorrentEngine_Pause_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 torrent.InfoHash
-		if args[1] != nil {
-			arg1 = args[1].(torrent.InfoHash)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *MockTorrentEngine_Pause_Call) Return(err error) *MockTorrentEngine_Pause_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *MockTorrentEngine_Pause_Call) RunAndReturn(run func(ctx context.Context, hash torrent.InfoHash) error) *MockTorrentEngine_Pause_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Remove provides a mock function for the type MockTorrentEngine
 func (_mock *MockTorrentEngine) Remove(ctx context.Context, hash torrent.InfoHash) error {
 	ret := _mock.Called(ctx, hash)
@@ -282,63 +225,6 @@ func (_c *MockTorrentEngine_Remove_Call) Return(err error) *MockTorrentEngine_Re
 }
 
 func (_c *MockTorrentEngine_Remove_Call) RunAndReturn(run func(ctx context.Context, hash torrent.InfoHash) error) *MockTorrentEngine_Remove_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Resume provides a mock function for the type MockTorrentEngine
-func (_mock *MockTorrentEngine) Resume(ctx context.Context, hash torrent.InfoHash) error {
-	ret := _mock.Called(ctx, hash)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Resume")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, torrent.InfoHash) error); ok {
-		r0 = returnFunc(ctx, hash)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// MockTorrentEngine_Resume_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Resume'
-type MockTorrentEngine_Resume_Call struct {
-	*mock.Call
-}
-
-// Resume is a helper method to define mock.On call
-//   - ctx context.Context
-//   - hash torrent.InfoHash
-func (_e *MockTorrentEngine_Expecter) Resume(ctx interface{}, hash interface{}) *MockTorrentEngine_Resume_Call {
-	return &MockTorrentEngine_Resume_Call{Call: _e.mock.On("Resume", ctx, hash)}
-}
-
-func (_c *MockTorrentEngine_Resume_Call) Run(run func(ctx context.Context, hash torrent.InfoHash)) *MockTorrentEngine_Resume_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 torrent.InfoHash
-		if args[1] != nil {
-			arg1 = args[1].(torrent.InfoHash)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *MockTorrentEngine_Resume_Call) Return(err error) *MockTorrentEngine_Resume_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *MockTorrentEngine_Resume_Call) RunAndReturn(run func(ctx context.Context, hash torrent.InfoHash) error) *MockTorrentEngine_Resume_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -160,6 +160,70 @@ func TestTorrentRepository_Delete(t *testing.T) {
 	})
 }
 
+func TestTorrentRepository_SetMetadata(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		repo := newTestRepository(t)
+		ctx := t.Context()
+
+		hash := "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+		require.NoError(t, repo.Create(ctx, database.Torrent{
+			InfoHash:  hash,
+			Magnet:    "magnet:?xt=urn:btih:" + hash,
+			TargetDir: "/tmp/downloads",
+		}))
+
+		got, err := repo.Get(ctx, hash)
+		require.NoError(t, err)
+		assert.Empty(t, got.Name)
+		assert.Zero(t, got.Length)
+
+		require.NoError(t, repo.SetMetadata(ctx, hash, "linux-amd64.iso", 500_000_000))
+
+		got, err = repo.Get(ctx, hash)
+		require.NoError(t, err)
+		assert.Equal(t, "linux-amd64.iso", got.Name)
+		assert.EqualValues(t, 500_000_000, got.Length)
+	})
+
+	t.Run("missing", func(t *testing.T) {
+		repo := newTestRepository(t)
+
+		err := repo.SetMetadata(t.Context(), "ffffffffffffffffffffffffffffffffffffffff", "x", 1)
+		assert.ErrorIs(t, err, database.ErrTorrentNotFound)
+	})
+}
+
+func TestTorrentRepository_SetBytesCompleted(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		repo := newTestRepository(t)
+		ctx := t.Context()
+
+		hash := "dededededededededededededededededededede"
+		require.NoError(t, repo.Create(ctx, database.Torrent{
+			InfoHash:  hash,
+			Magnet:    "magnet:?xt=urn:btih:" + hash,
+			TargetDir: "/tmp/downloads",
+		}))
+
+		require.NoError(t, repo.SetBytesCompleted(ctx, hash, 1_234_567))
+
+		got, err := repo.Get(ctx, hash)
+		require.NoError(t, err)
+		assert.EqualValues(t, 1_234_567, got.BytesCompleted)
+	})
+
+	t.Run("missing", func(t *testing.T) {
+		repo := newTestRepository(t)
+
+		err := repo.SetBytesCompleted(t.Context(), "ffffffffffffffffffffffffffffffffffffffff", 1)
+		assert.ErrorIs(t, err, database.ErrTorrentNotFound)
+	})
+}
+
 func TestTorrentRepository_SetPaused(t *testing.T) {
 	t.Parallel()
 

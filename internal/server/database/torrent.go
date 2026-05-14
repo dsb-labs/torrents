@@ -28,6 +28,16 @@ type (
 		TargetDir string
 		// Whether the torrent is currently paused.
 		Paused bool
+		// The display name captured from the torrent's metainfo, or empty when
+		// metainfo hasn't been seen yet. Persisted so paused torrents can still
+		// render their name in the UI.
+		Name string
+		// The total length of the torrent's content in bytes, or 0 when
+		// metainfo hasn't been seen yet.
+		Length int64
+		// How many bytes of the content have been downloaded, captured from the
+		// engine at pause time so paused torrents keep showing their progress.
+		BytesCompleted int64
 		// The time the torrent was added.
 		CreatedAt time.Time
 		// The time the torrent's row was last modified.
@@ -71,7 +81,7 @@ func (r *TorrentRepository) Create(ctx context.Context, t Torrent) error {
 // ErrTorrentNotFound when no such torrent exists.
 func (r *TorrentRepository) Get(ctx context.Context, infoHash string) (Torrent, error) {
 	const q = `
-		SELECT info_hash, magnet, label, target_dir, is_paused, created_at, updated_at
+		SELECT info_hash, magnet, label, target_dir, is_paused, name, length, bytes_completed, created_at, updated_at
 		FROM torrent
 		WHERE info_hash = ?
 	`
@@ -87,6 +97,9 @@ func (r *TorrentRepository) Get(ctx context.Context, infoHash string) (Torrent, 
 		&t.Label,
 		&t.TargetDir,
 		&t.Paused,
+		&t.Name,
+		&t.Length,
+		&t.BytesCompleted,
 		&createdAt,
 		&updatedAt,
 	)
@@ -108,7 +121,7 @@ func (r *TorrentRepository) Get(ctx context.Context, infoHash string) (Torrent, 
 // List returns every torrent in the repository, ordered by creation time ascending.
 func (r *TorrentRepository) List(ctx context.Context) ([]Torrent, error) {
 	const q = `
-		SELECT info_hash, magnet, label, target_dir, is_paused, created_at, updated_at
+		SELECT info_hash, magnet, label, target_dir, is_paused, name, length, bytes_completed, created_at, updated_at
 		FROM torrent
 		ORDER BY created_at ASC
 	`
@@ -132,6 +145,9 @@ func (r *TorrentRepository) List(ctx context.Context) ([]Torrent, error) {
 			&t.Label,
 			&t.TargetDir,
 			&t.Paused,
+			&t.Name,
+			&t.Length,
+			&t.BytesCompleted,
 			&createdAt,
 			&updatedAt,
 		); err != nil {
@@ -157,6 +173,60 @@ func (r *TorrentRepository) Delete(ctx context.Context, infoHash string) error {
 	result, err := r.db.ExecContext(ctx, q, infoHash)
 	if err != nil {
 		return fmt.Errorf("failed to delete torrent: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to read affected rows: %w", err)
+	}
+
+	if rows == 0 {
+		return ErrTorrentNotFound
+	}
+
+	return nil
+}
+
+// SetMetadata updates the persisted display name and content length for the
+// torrent identified by the given info hash. Returns ErrTorrentNotFound when
+// no such torrent exists.
+func (r *TorrentRepository) SetMetadata(ctx context.Context, infoHash, name string, length int64) error {
+	const q = `
+		UPDATE torrent
+		SET name = ?, length = ?, updated_at = ?
+		WHERE info_hash = ?
+	`
+
+	result, err := r.db.ExecContext(ctx, q, name, length, formatTime(time.Now()), infoHash)
+	if err != nil {
+		return fmt.Errorf("failed to update torrent: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to read affected rows: %w", err)
+	}
+
+	if rows == 0 {
+		return ErrTorrentNotFound
+	}
+
+	return nil
+}
+
+// SetBytesCompleted updates the persisted bytes-completed counter for the
+// torrent identified by the given info hash. Returns ErrTorrentNotFound when
+// no such torrent exists.
+func (r *TorrentRepository) SetBytesCompleted(ctx context.Context, infoHash string, bytesCompleted int64) error {
+	const q = `
+		UPDATE torrent
+		SET bytes_completed = ?, updated_at = ?
+		WHERE info_hash = ?
+	`
+
+	result, err := r.db.ExecContext(ctx, q, bytesCompleted, formatTime(time.Now()), infoHash)
+	if err != nil {
+		return fmt.Errorf("failed to update torrent: %w", err)
 	}
 
 	rows, err := result.RowsAffected()

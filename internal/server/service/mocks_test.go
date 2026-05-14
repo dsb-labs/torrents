@@ -558,6 +558,138 @@ func (_c *MockTorrentRepository_List_Call) RunAndReturn(run func(ctx context.Con
 	return _c
 }
 
+// SetBytesCompleted provides a mock function for the type MockTorrentRepository
+func (_mock *MockTorrentRepository) SetBytesCompleted(ctx context.Context, infoHash string, bytesCompleted int64) error {
+	ret := _mock.Called(ctx, infoHash, bytesCompleted)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetBytesCompleted")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, int64) error); ok {
+		r0 = returnFunc(ctx, infoHash, bytesCompleted)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockTorrentRepository_SetBytesCompleted_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetBytesCompleted'
+type MockTorrentRepository_SetBytesCompleted_Call struct {
+	*mock.Call
+}
+
+// SetBytesCompleted is a helper method to define mock.On call
+//   - ctx context.Context
+//   - infoHash string
+//   - bytesCompleted int64
+func (_e *MockTorrentRepository_Expecter) SetBytesCompleted(ctx interface{}, infoHash interface{}, bytesCompleted interface{}) *MockTorrentRepository_SetBytesCompleted_Call {
+	return &MockTorrentRepository_SetBytesCompleted_Call{Call: _e.mock.On("SetBytesCompleted", ctx, infoHash, bytesCompleted)}
+}
+
+func (_c *MockTorrentRepository_SetBytesCompleted_Call) Run(run func(ctx context.Context, infoHash string, bytesCompleted int64)) *MockTorrentRepository_SetBytesCompleted_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 int64
+		if args[2] != nil {
+			arg2 = args[2].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockTorrentRepository_SetBytesCompleted_Call) Return(err error) *MockTorrentRepository_SetBytesCompleted_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockTorrentRepository_SetBytesCompleted_Call) RunAndReturn(run func(ctx context.Context, infoHash string, bytesCompleted int64) error) *MockTorrentRepository_SetBytesCompleted_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetMetadata provides a mock function for the type MockTorrentRepository
+func (_mock *MockTorrentRepository) SetMetadata(ctx context.Context, infoHash string, name string, length int64) error {
+	ret := _mock.Called(ctx, infoHash, name, length)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetMetadata")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, int64) error); ok {
+		r0 = returnFunc(ctx, infoHash, name, length)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockTorrentRepository_SetMetadata_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetMetadata'
+type MockTorrentRepository_SetMetadata_Call struct {
+	*mock.Call
+}
+
+// SetMetadata is a helper method to define mock.On call
+//   - ctx context.Context
+//   - infoHash string
+//   - name string
+//   - length int64
+func (_e *MockTorrentRepository_Expecter) SetMetadata(ctx interface{}, infoHash interface{}, name interface{}, length interface{}) *MockTorrentRepository_SetMetadata_Call {
+	return &MockTorrentRepository_SetMetadata_Call{Call: _e.mock.On("SetMetadata", ctx, infoHash, name, length)}
+}
+
+func (_c *MockTorrentRepository_SetMetadata_Call) Run(run func(ctx context.Context, infoHash string, name string, length int64)) *MockTorrentRepository_SetMetadata_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 int64
+		if args[3] != nil {
+			arg3 = args[3].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockTorrentRepository_SetMetadata_Call) Return(err error) *MockTorrentRepository_SetMetadata_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockTorrentRepository_SetMetadata_Call) RunAndReturn(run func(ctx context.Context, infoHash string, name string, length int64) error) *MockTorrentRepository_SetMetadata_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SetPaused provides a mock function for the type MockTorrentRepository
 func (_mock *MockTorrentRepository) SetPaused(ctx context.Context, infoHash string, paused bool) error {
 	ret := _mock.Called(ctx, infoHash, paused)

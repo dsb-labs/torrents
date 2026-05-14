@@ -43,6 +43,12 @@ type (
 		List(ctx context.Context) ([]database.Torrent, error)
 		// Delete should remove the torrent identified by infoHash.
 		Delete(ctx context.Context, infoHash string) error
+		// SetMetadata should persist the display name and total length for the
+		// torrent identified by infoHash.
+		SetMetadata(ctx context.Context, infoHash, name string, length int64) error
+		// SetBytesCompleted should persist the bytes-completed counter for the
+		// torrent identified by infoHash.
+		SetBytesCompleted(ctx context.Context, infoHash string, bytesCompleted int64) error
 		// SetPaused should update the paused state of the torrent identified by infoHash.
 		SetPaused(ctx context.Context, infoHash string, paused bool) error
 	}
@@ -176,9 +182,13 @@ func (s *TorrentService) Remove(ctx context.Context, infoHash string) error {
 }
 
 // Pause stops the torrent identified by infoHash by removing it from the engine
-// and recording the paused state in the repository. Returns ErrTorrentNotFound
-// when no such torrent is managed.
+// and recording the paused state in the repository. The engine's current
+// bytes-completed counter is captured first so the UI can keep showing
+// progress while the torrent is paused. Returns ErrTorrentNotFound when no
+// such torrent is managed.
 func (s *TorrentService) Pause(ctx context.Context, infoHash string) error {
+	s.persistBytesCompleted(ctx, torrent.InfoHash(infoHash))
+
 	err := s.engine.Remove(ctx, torrent.InfoHash(infoHash))
 	switch {
 	case errors.Is(err, torrent.ErrNotFound):
@@ -210,9 +220,12 @@ func (s *TorrentService) Resume(ctx context.Context, infoHash string) error {
 		return fmt.Errorf("failed to load torrent: %w", err)
 	}
 
-	if _, err := s.engine.AddMagnet(ctx, row.Magnet); err != nil {
+	hash, err := s.engine.AddMagnet(ctx, row.Magnet)
+	if err != nil {
 		return fmt.Errorf("failed to re-add torrent to engine: %w", err)
 	}
+
+	s.persistMetadata(ctx, hash)
 
 	err = s.torrents.SetPaused(ctx, infoHash, false)
 	switch {
@@ -240,9 +253,13 @@ func (s *TorrentService) Restore(ctx context.Context) error {
 			continue
 		}
 
-		if _, err := s.engine.AddMagnet(ctx, row.Magnet); err != nil {
+		hash, err := s.engine.AddMagnet(ctx, row.Magnet)
+		if err != nil {
 			s.logger.With("info_hash", row.InfoHash, "error", err).Error("failed to restore torrent to engine")
+			continue
 		}
+
+		s.persistMetadata(ctx, hash)
 	}
 
 	return nil
@@ -262,18 +279,55 @@ func (s *TorrentService) persist(ctx context.Context, hash torrent.InfoHash, mag
 		return Torrent{}, fmt.Errorf("failed to persist torrent: %w", err)
 	}
 
+	s.persistMetadata(ctx, hash)
+
 	return s.Get(ctx, string(hash))
+}
+
+// persistMetadata captures the engine's current name and length for the
+// torrent identified by hash and writes them to the repository so the UI can
+// still render them after the torrent is paused (and dropped from the engine).
+// Failures are logged and swallowed: the caller's primary operation succeeded
+// and a missing-name fallback is recoverable on the next add/resume.
+func (s *TorrentService) persistMetadata(ctx context.Context, hash torrent.InfoHash) {
+	progress, err := s.engine.Snapshot(hash)
+	if err != nil || progress.Name == "" {
+		return
+	}
+
+	if err := s.torrents.SetMetadata(ctx, string(hash), progress.Name, progress.Length); err != nil {
+		s.logger.With("info_hash", hash, "error", err).Error("failed to persist torrent metadata")
+	}
+}
+
+// persistBytesCompleted captures the engine's current bytes-completed counter
+// for the torrent identified by hash and writes it to the repository so the
+// UI keeps showing progress after the torrent is paused. Failures are logged
+// and swallowed: the caller's primary operation is the state change, and a
+// stale counter is preferable to aborting the pause.
+func (s *TorrentService) persistBytesCompleted(ctx context.Context, hash torrent.InfoHash) {
+	progress, err := s.engine.Snapshot(hash)
+	if err != nil {
+		return
+	}
+
+	if err := s.torrents.SetBytesCompleted(ctx, string(hash), progress.BytesCompleted); err != nil {
+		s.logger.With("info_hash", hash, "error", err).Error("failed to persist torrent bytes completed")
+	}
 }
 
 func (s *TorrentService) hydrate(row database.Torrent) Torrent {
 	t := Torrent{
-		InfoHash:  row.InfoHash,
-		Magnet:    row.Magnet,
-		Label:     row.Label,
-		TargetDir: row.TargetDir,
-		Paused:    row.Paused,
-		CreatedAt: row.CreatedAt,
-		UpdatedAt: row.UpdatedAt,
+		InfoHash:       row.InfoHash,
+		Magnet:         row.Magnet,
+		Label:          row.Label,
+		TargetDir:      row.TargetDir,
+		Paused:         row.Paused,
+		CreatedAt:      row.CreatedAt,
+		UpdatedAt:      row.UpdatedAt,
+		Name:           row.Name,
+		Length:         row.Length,
+		BytesCompleted: row.BytesCompleted,
 	}
 
 	progress, err := s.engine.Snapshot(torrent.InfoHash(row.InfoHash))
@@ -281,8 +335,12 @@ func (s *TorrentService) hydrate(row database.Torrent) Torrent {
 		return t
 	}
 
-	t.Name = progress.Name
-	t.Length = progress.Length
+	if progress.Name != "" {
+		t.Name = progress.Name
+	}
+	if progress.Length > 0 {
+		t.Length = progress.Length
+	}
 	t.BytesCompleted = progress.BytesCompleted
 	t.ActivePeers = progress.ActivePeers
 	t.Seeders = progress.Seeders

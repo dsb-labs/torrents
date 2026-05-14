@@ -5,6 +5,8 @@
 package torrent_test
 
 import (
+	"context"
+
 	"github.com/anacrolix/chansync/events"
 	torrent0 "github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -626,6 +628,57 @@ func (_c *MockTorrent_Stats_Call) Return(torrentStats torrent0.TorrentStats) *Mo
 }
 
 func (_c *MockTorrent_Stats_Call) RunAndReturn(run func() torrent0.TorrentStats) *MockTorrent_Stats_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// VerifyDataContext provides a mock function for the type MockTorrent
+func (_mock *MockTorrent) VerifyDataContext(ctx context.Context) error {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for VerifyDataContext")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockTorrent_VerifyDataContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'VerifyDataContext'
+type MockTorrent_VerifyDataContext_Call struct {
+	*mock.Call
+}
+
+// VerifyDataContext is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockTorrent_Expecter) VerifyDataContext(ctx interface{}) *MockTorrent_VerifyDataContext_Call {
+	return &MockTorrent_VerifyDataContext_Call{Call: _e.mock.On("VerifyDataContext", ctx)}
+}
+
+func (_c *MockTorrent_VerifyDataContext_Call) Run(run func(ctx context.Context)) *MockTorrent_VerifyDataContext_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockTorrent_VerifyDataContext_Call) Return(err error) *MockTorrent_VerifyDataContext_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockTorrent_VerifyDataContext_Call) RunAndReturn(run func(ctx context.Context) error) *MockTorrent_VerifyDataContext_Call {
 	_c.Call.Return(run)
 	return _c
 }

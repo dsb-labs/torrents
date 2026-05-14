@@ -223,6 +223,7 @@ func newMockTorrentWithInfoReady(t *testing.T) *MockTorrent {
 	ready := make(chan struct{})
 	close(ready)
 	mt.EXPECT().GotInfo().Return(ready).Once()
+	mt.EXPECT().VerifyDataContext(mock.Anything).Return(nil).Once()
 	mt.EXPECT().InfoHash().Return(testInfoHash()).Once()
 
 	return mt

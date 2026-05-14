@@ -1,12 +1,15 @@
 package torrent
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/anacrolix/chansync/events"
 	anacrolix "github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/anacrolix/torrent/storage"
 )
 
 type (
@@ -29,6 +32,9 @@ type (
 		// GotInfo should return a channel that closes once the torrent's
 		// metainfo has been received.
 		GotInfo() events.Done
+		// VerifyDataContext should re-hash every piece against the
+		// on-disk data and update completion state accordingly.
+		VerifyDataContext(ctx context.Context) error
 		// DownloadAll should start downloading every file in the torrent.
 		DownloadAll()
 		// Drop should remove the torrent from the client.
@@ -53,13 +59,27 @@ type (
 // NewClient returns a Client backed by anacrolix/torrent, writing downloaded
 // content under dataDir. The caller owns the returned Client's lifecycle and
 // must Close it when no longer needed.
+//
+// Piece-completion state is persisted in a Bolt database under dataDir so that
+// removing and re-adding a torrent (the pause/resume primitive) doesn't lose
+// download progress.
 func NewClient(dataDir string) (Client, error) {
 	if dataDir == "" {
 		return nil, errors.New("data directory is required")
 	}
 
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		return nil, fmt.Errorf("failed to create data directory: %w", err)
+	}
+
+	completion, err := storage.NewBoltPieceCompletion(dataDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open piece completion store: %w", err)
+	}
+
 	cfg := anacrolix.NewDefaultClientConfig()
 	cfg.DataDir = dataDir
+	cfg.DefaultStorage = storage.NewFileWithCompletion(dataDir, completion)
 
 	inner, err := anacrolix.NewClient(cfg)
 	if err != nil {

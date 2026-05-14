@@ -52,7 +52,7 @@ func TorrentTable(props TorrentTableProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"hidden items-center gap-4 border-b border-gray-200 bg-gray-50 px-6 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 md:flex\"><div class=\"min-w-0 flex-1\">Torrent</div><div class=\"w-64 shrink-0\">Progress</div><div class=\"w-16 shrink-0 text-right\">Peers</div><div class=\"w-20 shrink-0\">Status</div><div class=\"w-36 shrink-0 text-right\">Actions</div></div><ul class=\"divide-y divide-gray-200 dark:divide-gray-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"hidden items-center gap-4 border-b border-gray-200 bg-gray-50 px-6 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 md:flex\"><div class=\"min-w-0 flex-1\">Torrent</div><div class=\"w-64 shrink-0\">Progress</div><div class=\"w-16 shrink-0 text-right\">Peers</div><div class=\"w-44 shrink-0 text-right\">Actions</div></div><ul class=\"divide-y divide-gray-200 dark:divide-gray-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -395,9 +395,10 @@ func TestTorrentService_Resume(t *testing.T) {
 	t.Parallel()
 
 	tt := []struct {
-		Name       string
-		SetupMocks func(*MockTorrentEngine, *MockTorrentRepository)
-		ExpectErr  error
+		Name              string
+		SetupMocks        func(*MockTorrentEngine, *MockTorrentRepository)
+		ExpectErr         error
+		ExpectErrContains string
 	}{
 		{
 			Name: "success",
@@ -407,14 +408,28 @@ func TestTorrentService_Resume(t *testing.T) {
 					Magnet:   "magnet:?xt=urn:btih:" + testInfoHash,
 					Paused:   true,
 				}, nil).Once()
+				repo.EXPECT().SetPaused(mock.Anything, testInfoHash, false).Return(nil).Once()
 				engine.EXPECT().AddMagnet(mock.Anything, "magnet:?xt=urn:btih:"+testInfoHash).Return(torrent.InfoHash(testInfoHash), nil).Once()
 				engine.EXPECT().Snapshot(torrent.InfoHash(testInfoHash)).Return(torrent.Progress{
 					Name:   "linux-amd64.iso",
 					Length: 500_000_000,
 				}, nil).Once()
 				repo.EXPECT().SetMetadata(mock.Anything, testInfoHash, "linux-amd64.iso", int64(500_000_000)).Return(nil).Once()
-				repo.EXPECT().SetPaused(mock.Anything, testInfoHash, false).Return(nil).Once()
 			},
+		},
+		{
+			Name: "engine error rolls back paused flag",
+			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
+				repo.EXPECT().Get(mock.Anything, testInfoHash).Return(database.Torrent{
+					InfoHash: testInfoHash,
+					Magnet:   "magnet:?xt=urn:btih:" + testInfoHash,
+					Paused:   true,
+				}, nil).Once()
+				repo.EXPECT().SetPaused(mock.Anything, testInfoHash, false).Return(nil).Once()
+				engine.EXPECT().AddMagnet(mock.Anything, mock.Anything).Return("", errors.New("dead")).Once()
+				repo.EXPECT().SetPaused(mock.Anything, testInfoHash, true).Return(nil).Once()
+			},
+			ExpectErrContains: "failed to re-add torrent to engine",
 		},
 		{
 			Name: "row missing",
@@ -433,7 +448,7 @@ func TestTorrentService_Resume(t *testing.T) {
 			}
 
 			err := svc.Resume(t.Context(), testInfoHash)
-			if assertExpectedErr(t, err, tc.ExpectErr, "") {
+			if assertExpectedErr(t, err, tc.ExpectErr, tc.ExpectErrContains) {
 				return
 			}
 

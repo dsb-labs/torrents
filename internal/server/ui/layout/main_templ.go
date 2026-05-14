@@ -8,6 +8,8 @@ package layout
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "github.com/dsb-labs/torrents/internal/server/ui/component"
+
 type (
 	// The MainProps type contains fields used to configure the Main layout.
 	MainProps struct {
@@ -48,13 +50,21 @@ func Main(props MainProps) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(props.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/layout/main.templ`, Line: 21, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/layout/main.templ`, Line: 23, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"stylesheet\" href=\"/static/app.css\"><script src=\"/static/htmx.min.js\"></script></head><body class=\"h-full bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100\"><header class=\"border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800\"><div class=\"mx-auto max-w-6xl px-4 py-4 sm:px-6\"><h1 class=\"text-xl font-semibold\">torrents</h1></div></header><main class=\"mx-auto max-w-6xl px-4 py-6 space-y-6 sm:px-6 sm:py-8 sm:space-y-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"icon\" type=\"image/svg+xml\" href=\"/static/favicon.svg\"><link rel=\"stylesheet\" href=\"/static/app.css\"><script src=\"/static/htmx.min.js\"></script></head><body class=\"h-full bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100\"><header class=\"border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800\"><div class=\"mx-auto flex h-16 max-w-6xl items-center gap-2.5 px-4 sm:px-6\"><div class=\"flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = component.IconDownload("h-4 w-4 text-white").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><h1 class=\"text-sm font-semibold text-gray-900 dark:text-white\">Torrents</h1></div></header><main class=\"mx-auto max-w-6xl px-4 py-6 space-y-6 sm:px-6 sm:py-8 sm:space-y-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -62,7 +72,7 @@ func Main(props MainProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</main></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -16,7 +16,11 @@ type (
 	}
 )
 
-// AddForm renders the inline form used to add a new torrent by magnet URI.
+// AddForm renders the collapsed-by-default accordion that hosts the add-torrent
+// form. The spinner inside the submit button is HTMX-driven: it stays hidden
+// until the form is in flight, becomes visible while the request is pending,
+// and disappears again when the response lands. After a successful add the
+// form resets and the accordion closes.
 func AddForm(props AddFormProps) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -38,30 +42,64 @@ func AddForm(props AddFormProps) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form hx-post=\"/ui/torrents\" hx-target=\"#torrents-table\" hx-swap=\"outerHTML\" hx-on::after-request=\"this.reset()\" class=\"rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 space-y-4 sm:p-6\"><h2 class=\"text-base font-medium\">Add torrent</h2>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<details class=\"group rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if props.Error != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " open")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "><summary class=\"flex cursor-pointer list-none items-center gap-2 p-4 select-none\"><span class=\"text-indigo-600 dark:text-indigo-400\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = IconPlus().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span> <span class=\"font-medium\">Add torrent</span> <span class=\"ml-auto text-gray-500 transition-transform group-open:rotate-180 dark:text-gray-400\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = IconChevronDown().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</span></summary><form hx-post=\"/ui/torrents\" hx-target=\"#torrents-table\" hx-swap=\"outerHTML\" hx-disabled-elt=\"find button[type=submit]\" hx-on::after-request=\"if(event.detail.successful){this.reset();this.closest('details').removeAttribute('open');}\" class=\"space-y-4 border-t border-gray-200 p-4 dark:border-gray-700 sm:p-6\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if props.Error != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(props.Error)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/component/add_form.templ`, Line: 23, Col: 17}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/component/add_form.templ`, Line: 37, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"space-y-2\"><label for=\"magnet\" class=\"block text-sm font-medium\">Magnet URI</label> <input id=\"magnet\" name=\"magnet\" type=\"text\" required placeholder=\"magnet:?xt=urn:btih:...\" class=\"block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400\"></div><div class=\"grid grid-cols-1 gap-4 sm:grid-cols-2\"><div class=\"space-y-2\"><label for=\"label\" class=\"block text-sm font-medium\">Label <span class=\"text-xs font-normal text-gray-500 dark:text-gray-400\">(optional)</span></label> <input id=\"label\" name=\"label\" type=\"text\" class=\"block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400\"></div><div class=\"space-y-2\"><label for=\"target_dir\" class=\"block text-sm font-medium\">Target directory <span class=\"text-xs font-normal text-gray-500 dark:text-gray-400\">(optional)</span></label> <input id=\"target_dir\" name=\"target_dir\" type=\"text\" class=\"block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400\"></div></div><div><button type=\"submit\" class=\"w-full rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:w-auto\">Add</button></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"space-y-2\"><label for=\"magnet\" class=\"block text-sm font-medium\">Magnet URI</label> <input id=\"magnet\" name=\"magnet\" type=\"text\" required placeholder=\"magnet:?xt=urn:btih:...\" class=\"block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400\"></div><div class=\"grid grid-cols-1 gap-4 sm:grid-cols-2\"><div class=\"space-y-2\"><label for=\"label\" class=\"block text-sm font-medium\">Label <span class=\"text-xs font-normal text-gray-500 dark:text-gray-400\">(optional)</span></label> <input id=\"label\" name=\"label\" type=\"text\" class=\"block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400\"></div><div class=\"space-y-2\"><label for=\"target_dir\" class=\"block text-sm font-medium\">Target directory <span class=\"text-xs font-normal text-gray-500 dark:text-gray-400\">(optional)</span></label> <input id=\"target_dir\" name=\"target_dir\" type=\"text\" class=\"block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400\"></div></div><div><button type=\"submit\" class=\"inline-flex w-full items-center justify-center gap-2 rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-wait disabled:opacity-75 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:w-auto\"><span class=\"htmx-indicator\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = IconSpinner().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span> <span>Add</span></button></div></form></details>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

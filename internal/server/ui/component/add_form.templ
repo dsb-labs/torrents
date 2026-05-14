@@ -8,57 +8,77 @@ type (
 	}
 )
 
-// AddForm renders the inline form used to add a new torrent by magnet URI.
+// AddForm renders the collapsed-by-default accordion that hosts the add-torrent
+// form. The spinner inside the submit button is HTMX-driven: it stays hidden
+// until the form is in flight, becomes visible while the request is pending,
+// and disappears again when the response lands. After a successful add the
+// form resets and the accordion closes.
 templ AddForm(props AddFormProps) {
-	<form
-		hx-post="/ui/torrents"
-		hx-target="#torrents-table"
-		hx-swap="outerHTML"
-		hx-on::after-request="this.reset()"
-		class="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 space-y-4 sm:p-6"
-	>
-		<h2 class="text-base font-medium">Add torrent</h2>
-		if props.Error != "" {
-			<div class="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
-				{ props.Error }
-			</div>
-		}
-		<div class="space-y-2">
-			<label for="magnet" class="block text-sm font-medium">Magnet URI</label>
-			<input
-				id="magnet"
-				name="magnet"
-				type="text"
-				required
-				placeholder="magnet:?xt=urn:btih:..."
-				class="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
-			/>
-		</div>
-		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+	<details class="group rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800" open?={ props.Error != "" }>
+		<summary class="flex cursor-pointer list-none items-center gap-2 p-4 select-none">
+			<span class="text-indigo-600 dark:text-indigo-400">
+				@IconPlus()
+			</span>
+			<span class="font-medium">Add torrent</span>
+			<span class="ml-auto text-gray-500 transition-transform group-open:rotate-180 dark:text-gray-400">
+				@IconChevronDown()
+			</span>
+		</summary>
+		<form
+			hx-post="/ui/torrents"
+			hx-target="#torrents-table"
+			hx-swap="outerHTML"
+			hx-disabled-elt="find button[type=submit]"
+			hx-on::after-request="if(event.detail.successful){this.reset();this.closest('details').removeAttribute('open');}"
+			class="space-y-4 border-t border-gray-200 p-4 dark:border-gray-700 sm:p-6"
+		>
+			if props.Error != "" {
+				<div class="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
+					{ props.Error }
+				</div>
+			}
 			<div class="space-y-2">
-				<label for="label" class="block text-sm font-medium">Label <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(optional)</span></label>
+				<label for="magnet" class="block text-sm font-medium">Magnet URI</label>
 				<input
-					id="label"
-					name="label"
+					id="magnet"
+					name="magnet"
 					type="text"
+					required
+					placeholder="magnet:?xt=urn:btih:..."
 					class="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
 				/>
 			</div>
-			<div class="space-y-2">
-				<label for="target_dir" class="block text-sm font-medium">Target directory <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(optional)</span></label>
-				<input
-					id="target_dir"
-					name="target_dir"
-					type="text"
-					class="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
-				/>
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<div class="space-y-2">
+					<label for="label" class="block text-sm font-medium">Label <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(optional)</span></label>
+					<input
+						id="label"
+						name="label"
+						type="text"
+						class="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+					/>
+				</div>
+				<div class="space-y-2">
+					<label for="target_dir" class="block text-sm font-medium">Target directory <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(optional)</span></label>
+					<input
+						id="target_dir"
+						name="target_dir"
+						type="text"
+						class="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+					/>
+				</div>
 			</div>
-		</div>
-		<div>
-			<button
-				type="submit"
-				class="w-full rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:w-auto"
-			>Add</button>
-		</div>
-	</form>
+			<div>
+				<button
+					type="submit"
+					class="inline-flex w-full items-center justify-center gap-2 rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-wait disabled:opacity-75 dark:bg-indigo-500 dark:hover:bg-indigo-400 sm:w-auto"
+				>
+					<span class="htmx-indicator">
+						@IconSpinner()
+					</span>
+					<span>Add</span>
+				</button>
+			</div>
+		</form>
+	</details>
 }

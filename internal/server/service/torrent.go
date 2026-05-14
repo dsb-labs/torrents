@@ -211,6 +211,13 @@ func (s *TorrentService) Pause(ctx context.Context, infoHash string) error {
 // Resume re-adds the torrent identified by infoHash to the engine using its
 // persisted magnet URI and records the unpaused state. Returns ErrTorrentNotFound
 // when no such torrent is managed.
+//
+// The paused flag is flipped to false BEFORE engine.AddMagnet runs so the
+// row reflects the new state immediately; engine.AddMagnet can block for
+// seconds while VerifyDataContext re-hashes existing on-disk data, and the
+// UI polls every 2s, so an early flip lets the user see the state change
+// without waiting on verification. If engine.AddMagnet fails, the flag is
+// rolled back to true.
 func (s *TorrentService) Resume(ctx context.Context, infoHash string) error {
 	row, err := s.torrents.Get(ctx, infoHash)
 	switch {
@@ -220,13 +227,6 @@ func (s *TorrentService) Resume(ctx context.Context, infoHash string) error {
 		return fmt.Errorf("failed to load torrent: %w", err)
 	}
 
-	hash, err := s.engine.AddMagnet(ctx, row.Magnet)
-	if err != nil {
-		return fmt.Errorf("failed to re-add torrent to engine: %w", err)
-	}
-
-	s.persistMetadata(ctx, hash)
-
 	err = s.torrents.SetPaused(ctx, infoHash, false)
 	switch {
 	case errors.Is(err, database.ErrTorrentNotFound):
@@ -234,6 +234,16 @@ func (s *TorrentService) Resume(ctx context.Context, infoHash string) error {
 	case err != nil:
 		return fmt.Errorf("failed to persist torrent state: %w", err)
 	}
+
+	hash, err := s.engine.AddMagnet(ctx, row.Magnet)
+	if err != nil {
+		if rollbackErr := s.torrents.SetPaused(ctx, infoHash, true); rollbackErr != nil {
+			s.logger.With("info_hash", infoHash, "error", rollbackErr).Error("failed to roll back pause state after resume failure")
+		}
+		return fmt.Errorf("failed to re-add torrent to engine: %w", err)
+	}
+
+	s.persistMetadata(ctx, hash)
 
 	return nil
 }

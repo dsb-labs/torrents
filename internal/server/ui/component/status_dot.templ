@@ -1,0 +1,48 @@
+package component
+
+type (
+	// The StatusDotProps type contains fields used to configure the StatusDot component.
+	StatusDotProps struct {
+		// The status kind to render; one of "downloading", "seeding",
+		// "paused", or "pending".
+		Kind string
+	}
+)
+
+// StatusDot renders a small coloured circle that conveys a torrent's state
+// at a glance. The colour encodes the kind and the title attribute spells it
+// out for hover/screen-reader users.
+templ StatusDot(props StatusDotProps) {
+	<span
+		class={ "inline-flex h-2.5 w-2.5 shrink-0 rounded-full " + statusDotClass(props.Kind) }
+		title={ statusDotLabel(props.Kind) }
+		aria-label={ statusDotLabel(props.Kind) }
+		role="img"
+	></span>
+}
+
+func statusDotClass(kind string) string {
+	switch kind {
+	case "seeding":
+		return "bg-green-500"
+	case "paused":
+		return "bg-yellow-500"
+	case "pending":
+		return "bg-gray-400"
+	default:
+		return "bg-indigo-500"
+	}
+}
+
+func statusDotLabel(kind string) string {
+	switch kind {
+	case "seeding":
+		return "seeding"
+	case "paused":
+		return "paused"
+	case "pending":
+		return "waiting for metadata"
+	default:
+		return "downloading"
+	}
+}

@@ -17,43 +17,49 @@ type (
 // TorrentRow renders a single torrent. The outer `<li>` is the HTMX swap
 // target. Inside, two layouts coexist: a card-style label/value grid visible
 // only on small viewports, and a horizontally-laid-out row visible only from
-// md upward. The label column on mobile is sized to the longest label and the
-// value column fills the rest, so every row in the card lines up at the same
-// x position.
+// md upward. A coloured status dot sits next to the name in both layouts and
+// conveys the torrent's state (downloading / seeding / paused / pending).
 templ TorrentRow(props TorrentRowProps) {
 	<li id={ "torrent-" + props.Torrent.InfoHash }>
-		<div class="space-y-4 p-4 md:hidden">
-			<div class="min-w-0">
-				<div class="font-medium truncate">{ displayName(props.Torrent) }</div>
-				<div class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate">{ props.Torrent.InfoHash }</div>
-				if props.Torrent.Label != "" {
-					<div class="mt-1 text-xs text-gray-700 dark:text-gray-300 truncate">{ props.Torrent.Label }</div>
-				}
+		<div class="space-y-3 p-4 md:hidden">
+			<div class="flex items-center gap-3">
+				<div class="min-w-0 flex-1">
+					<div class="flex min-w-0 items-center gap-2">
+						@StatusDot(StatusDotProps{Kind: torrentStatusKind(props.Torrent)})
+						<span class="min-w-0 truncate font-medium">{ displayName(props.Torrent) }</span>
+					</div>
+					<div class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate">{ props.Torrent.InfoHash }</div>
+					if props.Torrent.Label != "" {
+						<div class="mt-1 text-xs text-gray-700 dark:text-gray-300 truncate">{ props.Torrent.Label }</div>
+					}
+				</div>
+				<div class="shrink-0">
+					@RowActions(RowActionsProps{InfoHash: props.Torrent.InfoHash, Paused: props.Torrent.Paused})
+				</div>
 			</div>
-			<dl class="grid grid-cols-[max-content_1fr] items-baseline gap-x-4 gap-y-3">
-				<dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Progress</dt>
-				<dd class="min-w-0">
-					@ProgressBar(ProgressBarProps{
-						BytesCompleted: props.Torrent.BytesCompleted,
-						Length:         props.Torrent.Length,
-					})
-				</dd>
-				<dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Peers</dt>
-				<dd class="text-sm tabular-nums text-gray-700 dark:text-gray-300">
+			<div class="flex items-baseline gap-4 text-sm tabular-nums">
+				if props.Torrent.Length > 0 {
+					<span class="font-medium text-gray-700 dark:text-gray-300">
+						{ fmt.Sprintf("%.0f%%", percent(ProgressBarProps{BytesCompleted: props.Torrent.BytesCompleted, Length: props.Torrent.Length})) }
+					</span>
+					<span class="text-gray-500 dark:text-gray-400">
+						{ humanBytes(props.Torrent.BytesCompleted) } / { humanBytes(props.Torrent.Length) }
+					</span>
+				} else {
+					<span class="text-gray-400 dark:text-gray-500">—</span>
+					<span class="text-gray-400 dark:text-gray-500">—</span>
+				}
+				<span class="text-gray-500 dark:text-gray-400">
 					{ fmt.Sprintf("%d / %d", props.Torrent.Seeders, props.Torrent.ActivePeers) }
-				</dd>
-				<dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</dt>
-				<dd>
-					@StatusBadge(StatusBadgeProps{Paused: props.Torrent.Paused})
-				</dd>
-			</dl>
-			<div class="flex justify-end">
-				@RowActions(RowActionsProps{InfoHash: props.Torrent.InfoHash, Paused: props.Torrent.Paused})
+				</span>
 			</div>
 		</div>
 		<div class="hidden items-center gap-4 px-6 py-3 md:flex">
 			<div class="min-w-0 flex-1">
-				<div class="font-medium truncate">{ displayName(props.Torrent) }</div>
+				<div class="flex min-w-0 items-center gap-2">
+					@StatusDot(StatusDotProps{Kind: torrentStatusKind(props.Torrent)})
+					<span class="min-w-0 truncate font-medium">{ displayName(props.Torrent) }</span>
+				</div>
 				<div class="font-mono text-xs text-gray-500 dark:text-gray-400 break-all">{ props.Torrent.InfoHash }</div>
 				if props.Torrent.Label != "" {
 					<div class="mt-1 text-xs text-gray-700 dark:text-gray-300 truncate">{ props.Torrent.Label }</div>
@@ -70,10 +76,7 @@ templ TorrentRow(props TorrentRowProps) {
 					{ fmt.Sprintf("%d / %d", props.Torrent.Seeders, props.Torrent.ActivePeers) }
 				</span>
 			</div>
-			<div class="w-20 shrink-0">
-				@StatusBadge(StatusBadgeProps{Paused: props.Torrent.Paused})
-			</div>
-			<div class="flex w-36 shrink-0 justify-end">
+			<div class="flex w-44 shrink-0 justify-end">
 				@RowActions(RowActionsProps{InfoHash: props.Torrent.InfoHash, Paused: props.Torrent.Paused})
 			</div>
 		</div>
@@ -85,4 +88,20 @@ func displayName(t service.Torrent) string {
 		return t.Name
 	}
 	return "(metadata pending)"
+}
+
+// torrentStatusKind classifies a torrent's state for the StatusDot. Paused
+// always wins (the user explicitly halted it), then we check whether metainfo
+// has arrived (length > 0), then whether all bytes are downloaded.
+func torrentStatusKind(t service.Torrent) string {
+	switch {
+	case t.Paused:
+		return "paused"
+	case t.Length == 0:
+		return "pending"
+	case t.BytesCompleted >= t.Length:
+		return "seeding"
+	default:
+		return "downloading"
+	}
 }

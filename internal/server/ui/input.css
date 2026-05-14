@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+  HTMX's default `.htmx-indicator` rule sets opacity: 0 so the indicator
+  always occupies its slot in the layout, which leaves a visible gap next to
+  the submit button label. Switching to display: none collapses the spinner
+  out of the flow until the request is in flight.
+*/
+.htmx-indicator {
+  display: none;
+}
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+  display: inline-flex;
+}

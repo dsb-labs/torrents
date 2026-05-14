@@ -12,6 +12,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dsb-labs/torrents/cmd/add"
+	delcmd "github.com/dsb-labs/torrents/cmd/delete"
+	"github.com/dsb-labs/torrents/cmd/list"
+	"github.com/dsb-labs/torrents/cmd/pause"
+	"github.com/dsb-labs/torrents/cmd/resume"
 	"github.com/dsb-labs/torrents/cmd/serve"
 )
 
@@ -34,6 +39,11 @@ func main() {
 
 	cmd.AddCommand(
 		serve.Command(),
+		add.Command(),
+		list.Command(),
+		delcmd.Command(),
+		pause.Command(),
+		resume.Command(),
 	)
 
 	if err := cmd.ExecuteContext(ctx); err != nil {

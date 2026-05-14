@@ -72,7 +72,7 @@ func TestTorrentAPI_Add(t *testing.T) {
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedBody: func(t *testing.T, w *httptest.ResponseRecorder) {
 				body := decodeJSON[api.ErrorResponse](t, w.Body)
-				assert.Contains(t, body.Error, "magnet")
+				assert.Contains(t, body.Message, "magnet")
 			},
 		},
 		{
@@ -89,7 +89,7 @@ func TestTorrentAPI_Add(t *testing.T) {
 			ExpectedStatus: http.StatusConflict,
 			ExpectedBody: func(t *testing.T, w *httptest.ResponseRecorder) {
 				body := decodeJSON[api.ErrorResponse](t, w.Body)
-				assert.Contains(t, body.Error, "already exists")
+				assert.Contains(t, body.Message, "already exists")
 			},
 		},
 		{
@@ -209,7 +209,7 @@ func TestTorrentAPI_Get(t *testing.T) {
 			ExpectedStatus: http.StatusNotFound,
 			ExpectedBody: func(t *testing.T, w *httptest.ResponseRecorder) {
 				body := decodeJSON[api.ErrorResponse](t, w.Body)
-				assert.Contains(t, body.Error, "does not exist")
+				assert.Contains(t, body.Message, "does not exist")
 			},
 		},
 	}
@@ -393,7 +393,7 @@ func TestRecovery(t *testing.T) {
 	require.Equal(t, http.StatusInternalServerError, w.Code)
 
 	body := decodeJSON[api.ErrorResponse](t, w.Body)
-	assert.Contains(t, body.Error, "internal server error")
+	assert.Contains(t, body.Message, "internal server error")
 }
 
 func requestBody(t *testing.T, request api.AddTorrentRequest, raw string) io.Reader {

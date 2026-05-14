@@ -132,7 +132,7 @@ func TestEngine_Remove(t *testing.T) {
 		})
 
 		err := engine.Remove(t.Context(), testInfoHashHex)
-		assert.ErrorIs(t, err, torrent.ErrTorrentNotFound)
+		assert.ErrorIs(t, err, torrent.ErrNotFound)
 	})
 
 	t.Run("invalid hash", func(t *testing.T) {
@@ -175,7 +175,7 @@ func TestEngine_Pause(t *testing.T) {
 		})
 
 		err := engine.Pause(t.Context(), testInfoHashHex)
-		assert.ErrorIs(t, err, torrent.ErrTorrentNotFound)
+		assert.ErrorIs(t, err, torrent.ErrNotFound)
 	})
 }
 
@@ -208,7 +208,7 @@ func TestEngine_Resume(t *testing.T) {
 		})
 
 		err := engine.Resume(t.Context(), testInfoHashHex)
-		assert.ErrorIs(t, err, torrent.ErrTorrentNotFound)
+		assert.ErrorIs(t, err, torrent.ErrNotFound)
 	})
 }
 
@@ -257,7 +257,7 @@ func TestEngine_Snapshot(t *testing.T) {
 		})
 
 		_, err := engine.Snapshot(testInfoHashHex)
-		assert.ErrorIs(t, err, torrent.ErrTorrentNotFound)
+		assert.ErrorIs(t, err, torrent.ErrNotFound)
 	})
 }
 

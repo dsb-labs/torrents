@@ -162,7 +162,7 @@ func (s *TorrentService) List(ctx context.Context) ([]Torrent, error) {
 func (s *TorrentService) Remove(ctx context.Context, infoHash string) error {
 	err := s.engine.Remove(ctx, torrent.InfoHash(infoHash))
 	switch {
-	case errors.Is(err, torrent.ErrTorrentNotFound):
+	case errors.Is(err, torrent.ErrNotFound):
 		// Engine doesn't know about it; fall through to delete the row.
 	case err != nil:
 		return fmt.Errorf("failed to remove torrent from engine: %w", err)
@@ -241,7 +241,7 @@ func (s *TorrentService) setPaused(ctx context.Context, infoHash string, paused 
 	if paused {
 		err := s.engine.Pause(ctx, hash)
 		switch {
-		case errors.Is(err, torrent.ErrTorrentNotFound):
+		case errors.Is(err, torrent.ErrNotFound):
 			return ErrTorrentNotFound
 		case err != nil:
 			return fmt.Errorf("failed to pause torrent: %w", err)
@@ -249,7 +249,7 @@ func (s *TorrentService) setPaused(ctx context.Context, infoHash string, paused 
 	} else {
 		err := s.engine.Resume(ctx, hash)
 		switch {
-		case errors.Is(err, torrent.ErrTorrentNotFound):
+		case errors.Is(err, torrent.ErrNotFound):
 			return ErrTorrentNotFound
 		case err != nil:
 			return fmt.Errorf("failed to resume torrent: %w", err)

@@ -12,9 +12,9 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-// ErrTorrentNotFound is returned when no torrent with the given info hash is
+// ErrNotFound is returned when no torrent with the given info hash is
 // tracked by the engine.
-var ErrTorrentNotFound = errors.New("torrent not found")
+var ErrNotFound = errors.New("torrent not found")
 
 type (
 	// The InfoHash type is a torrent's 40-character hex BitTorrent info hash.
@@ -104,7 +104,7 @@ func (e *Engine) AddFile(ctx context.Context, r io.Reader) (InfoHash, error) {
 }
 
 // Remove stops tracking the torrent identified by hash. Downloaded files are
-// left on disk. Returns ErrTorrentNotFound when the engine isn't tracking the
+// left on disk. Returns ErrNotFound when the engine isn't tracking the
 // given torrent.
 func (e *Engine) Remove(ctx context.Context, hash InfoHash) error {
 	t, ok, err := e.find(hash)
@@ -112,7 +112,7 @@ func (e *Engine) Remove(ctx context.Context, hash InfoHash) error {
 	case err != nil:
 		return err
 	case !ok:
-		return ErrTorrentNotFound
+		return ErrNotFound
 	}
 
 	t.Drop()
@@ -121,7 +121,7 @@ func (e *Engine) Remove(ctx context.Context, hash InfoHash) error {
 }
 
 // Pause stops data download and upload for the torrent identified by hash. The
-// torrent remains tracked by the engine. Returns ErrTorrentNotFound when the
+// torrent remains tracked by the engine. Returns ErrNotFound when the
 // engine isn't tracking the given torrent.
 func (e *Engine) Pause(ctx context.Context, hash InfoHash) error {
 	t, ok, err := e.find(hash)
@@ -129,7 +129,7 @@ func (e *Engine) Pause(ctx context.Context, hash InfoHash) error {
 	case err != nil:
 		return err
 	case !ok:
-		return ErrTorrentNotFound
+		return ErrNotFound
 	}
 
 	t.DisallowDataDownload()
@@ -139,14 +139,14 @@ func (e *Engine) Pause(ctx context.Context, hash InfoHash) error {
 }
 
 // Resume re-enables data download and upload for the torrent identified by hash.
-// Returns ErrTorrentNotFound when the engine isn't tracking the given torrent.
+// Returns ErrNotFound when the engine isn't tracking the given torrent.
 func (e *Engine) Resume(ctx context.Context, hash InfoHash) error {
 	t, ok, err := e.find(hash)
 	switch {
 	case err != nil:
 		return err
 	case !ok:
-		return ErrTorrentNotFound
+		return ErrNotFound
 	}
 
 	t.AllowDataDownload()
@@ -156,14 +156,14 @@ func (e *Engine) Resume(ctx context.Context, hash InfoHash) error {
 }
 
 // Snapshot returns the current state of the torrent identified by hash.
-// Returns ErrTorrentNotFound when the engine isn't tracking the given torrent.
+// Returns ErrNotFound when the engine isn't tracking the given torrent.
 func (e *Engine) Snapshot(hash InfoHash) (Progress, error) {
 	t, ok, err := e.find(hash)
 	switch {
 	case err != nil:
 		return Progress{}, err
 	case !ok:
-		return Progress{}, ErrTorrentNotFound
+		return Progress{}, ErrNotFound
 	}
 
 	stats := t.Stats()

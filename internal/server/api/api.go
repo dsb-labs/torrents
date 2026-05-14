@@ -16,11 +16,20 @@ type (
 		Validate() error
 	}
 
-	// The ErrorResponse type is the JSON shape returned for error responses.
+	// The ErrorResponse type is the JSON shape returned for error responses,
+	// and implements the error interface so callers can return it directly.
 	ErrorResponse struct {
-		Error string `json:"error"`
+		// The HTTP status code. Set when writing the response; not sent on the wire.
+		Status int `json:"-"`
+		// The human-readable error message.
+		Message string `json:"error"`
 	}
 )
+
+// Error returns the error message.
+func (e ErrorResponse) Error() string {
+	return e.Message
+}
 
 func decode[T Validatable](r io.Reader) (T, error) {
 	var t T
@@ -42,7 +51,10 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func writeErrorf(w http.ResponseWriter, status int, format string, args ...any) {
-	writeJSON(w, status, ErrorResponse{Error: fmt.Sprintf(format, args...)})
+	writeJSON(w, status, ErrorResponse{
+		Status:  status,
+		Message: fmt.Sprintf(format, args...),
+	})
 }
 
 // Logging returns middleware that records every request's method, path,

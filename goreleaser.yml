@@ -1,0 +1,53 @@
+project_name: "torrents"
+version: 2
+builds:
+  - id: torrents
+    binary: torrents
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - "-s -w"
+    env:
+      - CGO_ENABLED=0
+
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - zip
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
+  algorithm: sha256
+
+release:
+  mode: replace
+
+changelog:
+  use: github
+
+upx:
+  - enabled: true
+    compress: "6"
+    lzma: false
+
+dockers_v2:
+  - id: torrents
+    images:
+      - "ghcr.io/dsb-labs/torrents"
+    tags:
+      - "{{ .Tag }}"
+      - "v{{ .Major }}.{{ .Minor }}"
+      - "latest"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    ids:
+      - torrents

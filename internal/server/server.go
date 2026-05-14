@@ -43,7 +43,7 @@ func Run(ctx context.Context, config Config) error {
 	}
 	defer db.Close()
 
-	client, err := torrent.NewClient(filepath.Join(config.Data.Directory, "downloads"))
+	client, err := torrent.NewClient(filepath.Join(config.Data.Directory, "downloads"), database.NewPieceRepository(db))
 	if err != nil {
 		return fmt.Errorf("failed to start torrent client: %w", err)
 	}

@@ -35,10 +35,16 @@ type Config struct {
 // Open opens (or creates) the SQLite database at the path in config and runs any
 // pending migrations. The returned pool must be closed by the caller when no
 // longer needed.
+//
+// The connection is opened in WAL journal mode with a 5s busy timeout. WAL
+// lets readers run concurrently with a single writer, and the timeout makes
+// SQLite wait for a contended lock instead of immediately returning SQLITE_BUSY
+// — both are necessary because the torrent client hammers piece_completion
+// writes from many goroutines while the app reads/writes the torrent table.
 func Open(ctx context.Context, config Config) (*sql.DB, error) {
 	logger := config.Logger.With("component", "database")
 
-	db, err := sql.Open("sqlite", config.Path)
+	db, err := sql.Open("sqlite", config.Path+"?_pragma=journal_mode(wal)&_pragma=busy_timeout(5000)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}

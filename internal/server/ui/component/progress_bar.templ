@@ -1,0 +1,59 @@
+package component
+
+import "fmt"
+
+type (
+	// The ProgressBarProps type contains fields used to configure the ProgressBar component.
+	ProgressBarProps struct {
+		// The number of bytes downloaded so far.
+		BytesCompleted int64
+		// The total length in bytes; when zero the component renders an em-dash.
+		Length int64
+	}
+)
+
+// ProgressBar renders progress as percent on the left, a visual bar in the
+// middle, and byte counts on the right. The bar element is hidden on small
+// viewports so the row stays compact; the percent + byte text remain.
+templ ProgressBar(props ProgressBarProps) {
+	if props.Length > 0 {
+		<div class="flex items-center gap-3">
+			<span class="inline-block min-w-[2.5rem] text-right text-xs font-medium tabular-nums text-gray-700 dark:text-gray-300">
+				{ fmt.Sprintf("%.0f%%", percent(props)) }
+			</span>
+			<div class="hidden h-2 flex-1 overflow-hidden rounded bg-gray-200 dark:bg-gray-700 md:block">
+				<div
+					class="h-full bg-indigo-600 dark:bg-indigo-400"
+					style={ fmt.Sprintf("width: %.0f%%", percent(props)) }
+				></div>
+			</div>
+			<div class="flex items-baseline gap-1 text-xs tabular-nums text-gray-500 dark:text-gray-400">
+				<span class="inline-block min-w-[4rem] text-right">{ humanBytes(props.BytesCompleted) }</span>
+				<span class="text-gray-400 dark:text-gray-500">/</span>
+				<span>{ humanBytes(props.Length) }</span>
+			</div>
+		</div>
+	} else {
+		<div class="text-xs text-gray-500 dark:text-gray-400">—</div>
+	}
+}
+
+func percent(props ProgressBarProps) float64 {
+	if props.Length == 0 {
+		return 0
+	}
+	return float64(props.BytesCompleted) / float64(props.Length) * 100
+}
+
+func humanBytes(n int64) string {
+	const unit = 1024
+	if n < unit {
+		return fmt.Sprintf("%d B", n)
+	}
+	div, exp := int64(unit), 0
+	for v := n / unit; v >= unit; v /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %ciB", float64(n)/float64(div), "KMGTPE"[exp])
+}

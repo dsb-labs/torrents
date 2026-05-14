@@ -17,6 +17,7 @@ import (
 	"github.com/dsb-labs/torrents/internal/server/database"
 	"github.com/dsb-labs/torrents/internal/server/service"
 	"github.com/dsb-labs/torrents/internal/server/torrent"
+	"github.com/dsb-labs/torrents/internal/server/ui"
 )
 
 // Run starts the torrents server using the given configuration and blocks
@@ -61,6 +62,8 @@ func Run(ctx context.Context, config Config) error {
 
 	mux := http.NewServeMux()
 	api.NewTorrentAPI(torrents).Register(mux)
+	ui.NewTorrentHandler(torrents).Register(mux)
+	mux.Handle("GET /static/", ui.Static())
 
 	var handler http.Handler = mux
 	middlewares := []func(http.Handler) http.Handler{

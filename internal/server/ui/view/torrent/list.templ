@@ -1,0 +1,28 @@
+package torrent
+
+import (
+	"github.com/dsb-labs/torrents/internal/server/service"
+	"github.com/dsb-labs/torrents/internal/server/ui/component"
+	"github.com/dsb-labs/torrents/internal/server/ui/layout"
+)
+
+type (
+	// The ListViewModel type contains the data rendered by the torrent list page.
+	ListViewModel struct {
+		// The torrents to render.
+		Torrents []service.Torrent
+	}
+)
+
+// List renders the top-level torrent management page.
+templ List(model ListViewModel) {
+	@layout.Main(layout.MainProps{
+		Title: "torrents",
+		Body:  listContent(model),
+	})
+}
+
+templ listContent(model ListViewModel) {
+	@component.AddForm(component.AddFormProps{})
+	@component.TorrentTable(component.TorrentTableProps{Torrents: model.Torrents})
+}

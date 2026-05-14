@@ -1,6 +1,8 @@
 // Package main provides the entrypoint to the torrents binary.
 //
 //go:generate go tool mockery
+//go:generate go tool templ generate
+//go:generate ./scripts/build-ui.sh
 package main
 
 import (

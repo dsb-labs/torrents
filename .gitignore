@@ -1,6 +1,7 @@
 /dist/
 /torrents
 /data/
+node_modules/
 *.test
 *.out
 .idea/

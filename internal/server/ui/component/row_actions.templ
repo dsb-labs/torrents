@@ -1,0 +1,43 @@
+package component
+
+type (
+	// The RowActionsProps type contains fields used to configure the RowActions component.
+	RowActionsProps struct {
+		// The torrent's info hash used to build the HTMX endpoint URLs and the target row id.
+		InfoHash string
+		// Whether the torrent is currently paused.
+		Paused bool
+	}
+)
+
+// RowActions renders the per-row pause/resume + delete buttons that swap the
+// containing row via HTMX.
+templ RowActions(props RowActionsProps) {
+	<div class="flex gap-2 whitespace-nowrap">
+		if props.Paused {
+			<button
+				type="button"
+				class="min-w-[4.5rem] rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700"
+				hx-post={ "/ui/torrents/" + props.InfoHash + "/resume" }
+				hx-target={ "#torrent-" + props.InfoHash }
+				hx-swap="outerHTML"
+			>Resume</button>
+		} else {
+			<button
+				type="button"
+				class="min-w-[4.5rem] rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700"
+				hx-post={ "/ui/torrents/" + props.InfoHash + "/pause" }
+				hx-target={ "#torrent-" + props.InfoHash }
+				hx-swap="outerHTML"
+			>Pause</button>
+		}
+		<button
+			type="button"
+			class="rounded border border-red-300 bg-white px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/30"
+			hx-delete={ "/ui/torrents/" + props.InfoHash }
+			hx-target={ "#torrent-" + props.InfoHash }
+			hx-swap="outerHTML"
+			hx-confirm="Delete this torrent?"
+		>Delete</button>
+	</div>
+}

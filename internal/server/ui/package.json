@@ -6,7 +6,8 @@
     "build": "tailwindcss -i input.css -o static/app.css --minify && cp node_modules/htmx.org/dist/htmx.min.js static/htmx.min.js"
   },
   "devDependencies": {
-    "tailwindcss": "^3.4.0",
+    "@tailwindcss/cli": "^4.3.0",
+    "tailwindcss": "^4.3.0",
     "htmx.org": "^2.0.0"
   }
 }

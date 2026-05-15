@@ -3,10 +3,12 @@ module github.com/dsb-labs/torrents
 go 1.26
 
 require (
-	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c
+	github.com/BurntSushi/toml v1.6.0
+	github.com/a-h/templ v0.3.1020
 	github.com/anacrolix/chansync v0.7.0
 	github.com/anacrolix/torrent v1.61.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
+	github.com/go-playground/form/v4 v4.3.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
@@ -17,7 +19,6 @@ require (
 require (
 	github.com/RoaringBitmap/roaring v1.2.3 // indirect
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
-	github.com/a-h/templ v0.3.1020 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/anacrolix/btree v0.0.0-20251201064447-d86c3fa41bd8 // indirect
 	github.com/anacrolix/dht/v2 v2.23.0 // indirect
@@ -54,7 +55,6 @@ require (
 	github.com/go-llsqlite/crawshaw v0.5.6-0.20250312230104-194977a03421 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-playground/form/v4 v4.3.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect

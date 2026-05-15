@@ -12,6 +12,7 @@ import (
 	"github.com/dsb-labs/torrents/internal/server/service"
 	"github.com/dsb-labs/torrents/internal/server/ui/component"
 	"github.com/dsb-labs/torrents/internal/server/ui/layout"
+	"github.com/dsb-labs/torrents/internal/server/ui/script"
 )
 
 type (
@@ -45,8 +46,9 @@ func List(model ListViewModel) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = layout.Main(layout.MainProps{
-			Title: "torrents",
-			Body:  listContent(model),
+			Title:   "torrents",
+			Body:    listContent(model),
+			Scripts: []templ.Component{script.ConfirmPause()},
 		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

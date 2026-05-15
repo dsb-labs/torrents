@@ -19,7 +19,9 @@ type (
 )
 
 // TorrentTable renders the managed torrents as a stacked list that refreshes
-// itself via HTMX every two seconds. Each row stacks vertically on small
+// itself via HTMX every second. The trigger filter pauses polling whenever a
+// confirm dialog is up, so the table can't swap the DOM out from under a
+// click that's mid-confirmation. Each row stacks vertically on small
 // viewports and lays out horizontally from md upward.
 func TorrentTable(props TorrentTableProps) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -42,7 +44,7 @@ func TorrentTable(props TorrentTableProps) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"torrents-table\" hx-get=\"/ui/torrents\" hx-trigger=\"every 2s\" hx-swap=\"outerHTML\" class=\"overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"torrents-table\" hx-get=\"/ui/torrents\" hx-trigger=\"every 1s [!document.body.classList.contains('htmx-confirming')]\" hx-swap=\"outerHTML\" class=\"overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

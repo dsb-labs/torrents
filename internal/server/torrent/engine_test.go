@@ -25,7 +25,7 @@ func TestEngine_AddMagnet(t *testing.T) {
 		mockClient := NewMockClient(t)
 		mockTorrent := newMockTorrentWithInfoReady(t)
 
-		mockClient.EXPECT().AddMagnet("magnet:?xt=urn:btih:" + testInfoHashHex).Return(mockTorrent, nil).Once()
+		mockClient.EXPECT().AddMagnet("magnet:?xt=urn:btih:"+testInfoHashHex).Return(mockTorrent, nil).Once()
 		mockTorrent.EXPECT().DownloadAll().Return().Once()
 
 		engine := torrent.New(torrent.Config{
@@ -56,7 +56,7 @@ func TestEngine_AddMagnet(t *testing.T) {
 		mockTorrent := NewMockTorrent(t)
 
 		never := make(chan struct{})
-		mockClient.EXPECT().AddMagnet("magnet:?xt=urn:btih:" + testInfoHashHex).Return(mockTorrent, nil).Once()
+		mockClient.EXPECT().AddMagnet("magnet:?xt=urn:btih:"+testInfoHashHex).Return(mockTorrent, nil).Once()
 		mockTorrent.EXPECT().GotInfo().Return(never).Once()
 		mockTorrent.EXPECT().Drop().Return().Once()
 

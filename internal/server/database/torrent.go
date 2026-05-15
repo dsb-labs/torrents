@@ -266,4 +266,3 @@ func (r *TorrentRepository) SetPaused(ctx context.Context, infoHash string, paus
 
 	return nil
 }
-

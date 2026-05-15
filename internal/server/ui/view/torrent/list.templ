@@ -4,6 +4,7 @@ import (
 	"github.com/dsb-labs/torrents/internal/server/service"
 	"github.com/dsb-labs/torrents/internal/server/ui/component"
 	"github.com/dsb-labs/torrents/internal/server/ui/layout"
+	"github.com/dsb-labs/torrents/internal/server/ui/script"
 )
 
 type (
@@ -17,8 +18,9 @@ type (
 // List renders the top-level torrent management page.
 templ List(model ListViewModel) {
 	@layout.Main(layout.MainProps{
-		Title: "torrents",
-		Body:  listContent(model),
+		Title:   "torrents",
+		Body:    listContent(model),
+		Scripts: []templ.Component{script.ConfirmPause()},
 	})
 }
 

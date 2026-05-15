@@ -52,7 +52,7 @@ func TestTorrentRepository_Create(t *testing.T) {
 			InfoHash:  "dddddddddddddddddddddddddddddddddddddddd",
 			Magnet:    "magnet:?xt=urn:btih:dddddddddddddddddddddddddddddddddddddddd",
 			TargetDir: "/tmp/downloads",
-			Paused:  true,
+			Paused:    true,
 			CreatedAt: bogus,
 			UpdatedAt: bogus,
 		}))

@@ -9,6 +9,9 @@ type (
 		Title string
 		// The body content rendered inside <main>.
 		Body templ.Component
+		// Optional per-page vanilla-JS snippets, rendered at the end of <body>
+		// so they can rely on HTMX being loaded and the DOM being in place.
+		Scripts []templ.Component
 	}
 )
 
@@ -37,6 +40,9 @@ templ Main(props MainProps) {
 			<main class="mx-auto max-w-6xl px-4 py-6 space-y-6 sm:px-6 sm:py-8 sm:space-y-8">
 				@props.Body
 			</main>
+			for _, s := range props.Scripts {
+				@s
+			}
 		</body>
 	</html>
 }

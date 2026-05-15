@@ -1,0 +1,28 @@
+package script
+
+// ConfirmPause replaces the default htmx:confirm behaviour with a version
+// that pauses polling while the confirmation dialog is up. Native confirm()
+// blocks the JS thread, so any "every Ns" poll timer that ticks during the
+// dialog queues — and on dismissal it would race the user's click, often
+// swapping the DOM out from under the request before it can fire. Adding the
+// `htmx-confirming` class lets the table's hx-trigger filter skip the queued
+// ticks; a 0ms timeout keeps the class set long enough for the catch-up
+// ticks to drain after the dialog closes.
+templ ConfirmPause() {
+	<script>
+		document.body.addEventListener('htmx:confirm', function(evt) {
+			if (!evt.detail.question) return;
+			evt.preventDefault();
+			document.body.classList.add('htmx-confirming');
+			try {
+				if (confirm(evt.detail.question)) {
+					evt.detail.issueRequest(true);
+				}
+			} finally {
+				setTimeout(function() {
+					document.body.classList.remove('htmx-confirming');
+				}, 0);
+			}
+		});
+	</script>
+}

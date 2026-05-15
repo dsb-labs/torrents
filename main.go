@@ -2,6 +2,7 @@
 //
 //go:generate go tool mockery
 //go:generate go tool templ generate
+//go:generate go tool go-licenses save --one_output --force --ignore "github.com/dsb-labs/torrents,github.com/go-llsqlite/adapter" --save_path licenses .
 package main
 
 import (

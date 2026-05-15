@@ -20,6 +20,8 @@ builds:
 
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - licenses/*
     formats:
       - zip
 
@@ -51,3 +53,5 @@ dockers_v2:
       - linux/arm64
     ids:
       - torrents
+    extra_files:
+      - licenses

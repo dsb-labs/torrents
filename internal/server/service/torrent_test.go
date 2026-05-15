@@ -89,7 +89,7 @@ func TestTorrentService_AddMagnet(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			svc, engine, repo := newServiceFixture(t)
+			svc, engine, repo, _ := newServiceFixture(t)
 			if tc.SetupMocks != nil {
 				tc.SetupMocks(engine, repo)
 			}
@@ -137,7 +137,7 @@ func TestTorrentService_AddFile(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			svc, engine, repo := newServiceFixture(t)
+			svc, engine, repo, _ := newServiceFixture(t)
 			if tc.SetupMocks != nil {
 				tc.SetupMocks(engine, repo)
 			}
@@ -211,7 +211,7 @@ func TestTorrentService_Get(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			svc, engine, repo := newServiceFixture(t)
+			svc, engine, repo, _ := newServiceFixture(t)
 			if tc.SetupMocks != nil {
 				tc.SetupMocks(engine, repo)
 			}
@@ -271,7 +271,7 @@ func TestTorrentService_List(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			svc, engine, repo := newServiceFixture(t)
+			svc, engine, repo, _ := newServiceFixture(t)
 			if tc.SetupMocks != nil {
 				tc.SetupMocks(engine, repo)
 			}
@@ -294,26 +294,28 @@ func TestTorrentService_Remove(t *testing.T) {
 
 	tt := []struct {
 		Name       string
-		SetupMocks func(*MockTorrentEngine, *MockTorrentRepository)
+		SetupMocks func(*MockTorrentEngine, *MockTorrentRepository, *MockPieceRepository)
 		ExpectErr  error
 	}{
 		{
 			Name: "success",
-			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
+			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository, pieces *MockPieceRepository) {
 				engine.EXPECT().Remove(mock.Anything, torrent.InfoHash(testInfoHash)).Return(nil).Once()
 				repo.EXPECT().Delete(mock.Anything, testInfoHash).Return(nil).Once()
+				pieces.EXPECT().Forget(testInfoHash).Once()
 			},
 		},
 		{
 			Name: "not found in engine still deletes row",
-			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
+			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository, pieces *MockPieceRepository) {
 				engine.EXPECT().Remove(mock.Anything, torrent.InfoHash(testInfoHash)).Return(torrent.ErrNotFound).Once()
 				repo.EXPECT().Delete(mock.Anything, testInfoHash).Return(nil).Once()
+				pieces.EXPECT().Forget(testInfoHash).Once()
 			},
 		},
 		{
 			Name: "not found",
-			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
+			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository, _ *MockPieceRepository) {
 				engine.EXPECT().Remove(mock.Anything, torrent.InfoHash(testInfoHash)).Return(torrent.ErrNotFound).Once()
 				repo.EXPECT().Delete(mock.Anything, testInfoHash).Return(database.ErrTorrentNotFound).Once()
 			},
@@ -323,9 +325,9 @@ func TestTorrentService_Remove(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			svc, engine, repo := newServiceFixture(t)
+			svc, engine, repo, pieces := newServiceFixture(t)
 			if tc.SetupMocks != nil {
-				tc.SetupMocks(engine, repo)
+				tc.SetupMocks(engine, repo, pieces)
 			}
 
 			err := svc.Remove(t.Context(), testInfoHash)
@@ -376,7 +378,7 @@ func TestTorrentService_Pause(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			svc, engine, repo := newServiceFixture(t)
+			svc, engine, repo, _ := newServiceFixture(t)
 			if tc.SetupMocks != nil {
 				tc.SetupMocks(engine, repo)
 			}
@@ -442,7 +444,7 @@ func TestTorrentService_Resume(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			svc, engine, repo := newServiceFixture(t)
+			svc, engine, repo, _ := newServiceFixture(t)
 			if tc.SetupMocks != nil {
 				tc.SetupMocks(engine, repo)
 			}
@@ -505,7 +507,7 @@ func TestTorrentService_Restore(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			svc, engine, repo := newServiceFixture(t)
+			svc, engine, repo, _ := newServiceFixture(t)
 			if tc.SetupMocks != nil {
 				tc.SetupMocks(engine, repo)
 			}
@@ -520,14 +522,15 @@ func TestTorrentService_Restore(t *testing.T) {
 	}
 }
 
-func newServiceFixture(t *testing.T) (*service.TorrentService, *MockTorrentEngine, *MockTorrentRepository) {
+func newServiceFixture(t *testing.T) (*service.TorrentService, *MockTorrentEngine, *MockTorrentRepository, *MockPieceRepository) {
 	t.Helper()
 
 	engine := NewMockTorrentEngine(t)
 	repo := NewMockTorrentRepository(t)
-	svc := service.NewTorrentService(newTestLogger(t), engine, repo)
+	pieces := NewMockPieceRepository(t)
+	svc := service.NewTorrentService(newTestLogger(t), engine, repo, pieces)
 
-	return svc, engine, repo
+	return svc, engine, repo, pieces
 }
 
 func assertExpectedErr(t *testing.T, err, sentinel error, contains string) bool {

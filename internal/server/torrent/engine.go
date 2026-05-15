@@ -74,7 +74,7 @@ func (e *Engine) AddMagnet(ctx context.Context, uri string) (InfoHash, error) {
 		return "", ctx.Err()
 	}
 
-	if err := t.VerifyDataContext(ctx); err != nil {
+	if err = t.VerifyDataContext(ctx); err != nil {
 		t.Drop()
 		return "", fmt.Errorf("failed to verify torrent data: %w", err)
 	}
@@ -103,7 +103,7 @@ func (e *Engine) AddFile(ctx context.Context, r io.Reader) (InfoHash, error) {
 		return "", ctx.Err()
 	}
 
-	if err := t.VerifyDataContext(ctx); err != nil {
+	if err = t.VerifyDataContext(ctx); err != nil {
 		t.Drop()
 		return "", fmt.Errorf("failed to verify torrent data: %w", err)
 	}

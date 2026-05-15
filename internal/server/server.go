@@ -43,7 +43,12 @@ func Run(ctx context.Context, config Config) error {
 	}
 	defer db.Close()
 
-	client, err := torrent.NewClient(filepath.Join(config.Data.Directory, "downloads"), database.NewPieceRepository(db))
+	pieces := database.NewPieceRepository(db)
+	if err = pieces.Load(ctx); err != nil {
+		return fmt.Errorf("failed to load piece completion cache: %w", err)
+	}
+
+	client, err := torrent.NewClient(filepath.Join(config.Data.Directory, "downloads"), pieces)
 	if err != nil {
 		return fmt.Errorf("failed to start torrent client: %w", err)
 	}
@@ -54,7 +59,7 @@ func Run(ctx context.Context, config Config) error {
 		Client: client,
 	})
 
-	torrents := service.NewTorrentService(logger, engine, database.NewTorrentRepository(db))
+	torrents := service.NewTorrentService(logger, engine, database.NewTorrentRepository(db), pieces)
 
 	if err = torrents.Restore(ctx); err != nil {
 		return fmt.Errorf("failed to restore torrents: %w", err)

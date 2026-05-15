@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/dsb-labs/torrents/internal/server/database"
 	"github.com/dsb-labs/torrents/internal/server/torrent"
 )
@@ -31,6 +33,14 @@ type (
 		Remove(ctx context.Context, hash torrent.InfoHash) error
 		// Snapshot should return the current live state of the torrent identified by hash.
 		Snapshot(hash torrent.InfoHash) (torrent.Progress, error)
+	}
+
+	// The PieceRepository interface describes the piece-completion cache
+	// operations the service needs to keep in sync with torrent lifecycle events.
+	PieceRepository interface {
+		// Forget should drop any cached piece-completion entries for the
+		// torrent identified by infoHash.
+		Forget(infoHash string)
 	}
 
 	// The TorrentRepository interface describes the persistence operations the service uses.
@@ -96,15 +106,17 @@ type (
 		logger   *slog.Logger
 		engine   TorrentEngine
 		torrents TorrentRepository
+		pieces   PieceRepository
 	}
 )
 
-// NewTorrentService returns a TorrentService that operates on the given engine and repository.
-func NewTorrentService(logger *slog.Logger, engine TorrentEngine, torrents TorrentRepository) *TorrentService {
+// NewTorrentService returns a TorrentService that operates on the given engine and repositories.
+func NewTorrentService(logger *slog.Logger, engine TorrentEngine, torrents TorrentRepository, pieces PieceRepository) *TorrentService {
 	return &TorrentService{
 		logger:   logger.With("component", "service"),
 		engine:   engine,
 		torrents: torrents,
+		pieces:   pieces,
 	}
 }
 
@@ -177,6 +189,8 @@ func (s *TorrentService) Remove(ctx context.Context, infoHash string) error {
 	case err != nil:
 		return fmt.Errorf("failed to delete torrent: %w", err)
 	}
+
+	s.pieces.Forget(infoHash)
 
 	return nil
 }
@@ -258,21 +272,29 @@ func (s *TorrentService) Restore(ctx context.Context) error {
 		return fmt.Errorf("failed to list torrents: %w", err)
 	}
 
+	group, ctx := errgroup.WithContext(ctx)
 	for _, row := range rows {
 		if row.Paused {
 			continue
 		}
 
-		hash, err := s.engine.AddMagnet(ctx, row.Magnet)
-		if err != nil {
-			s.logger.With("info_hash", row.InfoHash, "error", err).Error("failed to restore torrent to engine")
-			continue
-		}
+		s.logger.With("info_hash", row.InfoHash).Debug("restoring torrent")
 
-		s.persistMetadata(ctx, hash)
+		group.Go(func() error {
+			hash, err := s.engine.AddMagnet(ctx, row.Magnet)
+			if err != nil {
+				s.logger.With("info_hash", row.InfoHash, "error", err).Error("failed to restore torrent to engine")
+				return nil
+			}
+
+			s.persistMetadata(ctx, hash)
+
+			s.logger.With("info_hash", row.InfoHash).Debug("torrent restored")
+			return ctx.Err()
+		})
 	}
 
-	return nil
+	return group.Wait()
 }
 
 func (s *TorrentService) persist(ctx context.Context, hash torrent.InfoHash, magnet string, opts AddOptions) (Torrent, error) {

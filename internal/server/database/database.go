@@ -41,10 +41,25 @@ type Config struct {
 // SQLite wait for a contended lock instead of immediately returning SQLITE_BUSY
 // — both are necessary because the torrent client hammers piece_completion
 // writes from many goroutines while the app reads/writes the torrent table.
+//
+// synchronous=NORMAL halves the fsync overhead of those piece_completion
+// writes versus FULL; in WAL mode the only thing this gives up is a tiny
+// window in which the last few committed transactions can be lost on a power
+// failure (no corruption risk), which is fine here because anacrolix will
+// just re-hash the affected pieces on the next startup. cache_size and
+// mmap_size widen the page cache so the per-piece SELECTs during restore
+// stay in RAM rather than hitting the file system; temp_store=MEMORY keeps
+// any temp B-trees off disk too.
 func Open(ctx context.Context, config Config) (*sql.DB, error) {
 	logger := config.Logger.With("component", "database")
 
-	db, err := sql.Open("sqlite", config.Path+"?_pragma=journal_mode(wal)&_pragma=busy_timeout(5000)")
+	db, err := sql.Open("sqlite", config.Path+
+		"?_pragma=journal_mode(wal)"+
+		"&_pragma=busy_timeout(5000)"+
+		"&_pragma=synchronous(normal)"+
+		"&_pragma=cache_size(-65536)"+
+		"&_pragma=mmap_size(268435456)"+
+		"&_pragma=temp_store(memory)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}

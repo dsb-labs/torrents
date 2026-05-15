@@ -128,11 +128,69 @@ func TestPieceRepository_CascadesFromTorrentDelete(t *testing.T) {
 
 	require.NoError(t, torrents.Delete(ctx, hash))
 
+	var rowCount int
+	err = db.QueryRowContext(ctx, `SELECT COUNT(*) FROM piece_completion WHERE info_hash = ?`, hash).Scan(&rowCount)
+	require.NoError(t, err)
+	assert.Equal(t, 0, rowCount, "piece_completion rows should be cascaded when their torrent is deleted")
+}
+
+func TestPieceRepository_Load(t *testing.T) {
+	t.Parallel()
+
+	db, err := database.Open(t.Context(), database.Config{
+		Logger: newTestLogger(t),
+		Path:   filepath.Join(t.TempDir(), "test.db"),
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, db.Close()) })
+
+	seeder := database.NewPieceRepository(db)
+	hash := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	require.NoError(t, seeder.Set(testPieceKey(t, hash, 0), true))
+	require.NoError(t, seeder.Set(testPieceKey(t, hash, 1), false))
+
+	repo := database.NewPieceRepository(db)
+
+	got, err := repo.Get(testPieceKey(t, hash, 0))
+	require.NoError(t, err)
+	assert.False(t, got.Ok, "cache should be empty before Load")
+
+	require.NoError(t, repo.Load(t.Context()))
+
+	got, err = repo.Get(testPieceKey(t, hash, 0))
+	require.NoError(t, err)
+	assert.True(t, got.Ok)
+	assert.True(t, got.Complete)
+
+	got, err = repo.Get(testPieceKey(t, hash, 1))
+	require.NoError(t, err)
+	assert.True(t, got.Ok)
+	assert.False(t, got.Complete)
+}
+
+func TestPieceRepository_Forget(t *testing.T) {
+	t.Parallel()
+
+	repo := newTestPieceRepository(t)
+	target := "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+	other := "cccccccccccccccccccccccccccccccccccccccc"
+
+	require.NoError(t, repo.Set(testPieceKey(t, target, 0), true))
+	require.NoError(t, repo.Set(testPieceKey(t, target, 1), false))
+	require.NoError(t, repo.Set(testPieceKey(t, other, 0), true))
+
+	repo.Forget(target)
+
 	for _, idx := range []int{0, 1} {
-		got, err := pieces.Get(testPieceKey(t, hash, idx))
+		got, err := repo.Get(testPieceKey(t, target, idx))
 		require.NoError(t, err)
-		assert.False(t, got.Ok, "piece %d should be deleted when its torrent is deleted", idx)
+		assert.False(t, got.Ok, "forgotten piece %d should report unknown", idx)
 	}
+
+	got, err := repo.Get(testPieceKey(t, other, 0))
+	require.NoError(t, err)
+	assert.True(t, got.Ok, "Forget must not touch other torrents")
+	assert.True(t, got.Complete)
 }
 
 func newTestPieceRepository(t *testing.T) *database.PieceRepository {

@@ -19,10 +19,11 @@ type (
 )
 
 // TorrentTable renders the managed torrents as a stacked list that refreshes
-// itself via HTMX every second. The trigger filter pauses polling whenever a
-// confirm dialog is up, so the table can't swap the DOM out from under a
-// click that's mid-confirmation. Each row stacks vertically on small
-// viewports and lays out horizontally from md upward.
+// itself via HTMX every second. Each row stacks vertically on small viewports
+// and lays out horizontally from md upward. The select-all checkbox and the
+// per-row checkboxes carry `hx-preserve`, so htmx hoists the existing
+// checkbox nodes (and their checked state) into the freshly-rendered table
+// on each poll — selection survives the swap without a JS restore step.
 func TorrentTable(props TorrentTableProps) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -44,17 +45,17 @@ func TorrentTable(props TorrentTableProps) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"torrents-table\" hx-get=\"/ui/torrents\" hx-trigger=\"every 1s [!document.body.classList.contains('htmx-confirming')]\" hx-swap=\"outerHTML\" class=\"overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"torrents-table\" hx-get=\"/ui/torrents\" hx-trigger=\"every 1s\" hx-swap=\"outerHTML\" class=\"overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(props.Torrents) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400\">No torrents yet. Add one above to get started.</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400\">No torrents yet. Add one to get started.</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"hidden items-center gap-4 border-b border-gray-200 bg-gray-50 px-6 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 md:flex\"><div class=\"min-w-0 flex-1\">Torrent</div><div class=\"w-64 shrink-0\">Progress</div><div class=\"w-16 shrink-0 text-right\">Peers</div><div class=\"w-44 shrink-0 text-right\">Actions</div></div><ul class=\"divide-y divide-gray-200 dark:divide-gray-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"flex items-center gap-4 border-b border-gray-200 bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 md:px-6\"><input type=\"checkbox\" id=\"select-all\" aria-label=\"Select all torrents\" class=\"h-5 w-5 shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900\" hx-preserve=\"true\"><div class=\"hidden min-w-0 flex-1 md:block\">Torrent</div><div class=\"hidden w-64 shrink-0 md:block\">Progress</div><div class=\"hidden w-16 shrink-0 text-right md:block\">Peers</div></div><ul class=\"divide-y divide-gray-200 dark:divide-gray-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -7,6 +7,8 @@ type (
 	MainProps struct {
 		// The page title rendered in the <title> tag.
 		Title string
+		// Optional toolbar rendered as a sibling of <header>, immediately below it.
+		Toolbar templ.Component
 		// The body content rendered inside <main>.
 		Body templ.Component
 		// Optional per-page vanilla-JS snippets, rendered at the end of <body>
@@ -37,6 +39,9 @@ templ Main(props MainProps) {
 					<h1 class="text-sm font-semibold text-gray-900 dark:text-white">Torrents</h1>
 				</div>
 			</header>
+			if props.Toolbar != nil {
+				@props.Toolbar
+			}
 			<main class="mx-auto max-w-6xl px-4 py-6 space-y-6 sm:px-6 sm:py-8 sm:space-y-8">
 				@props.Body
 			</main>

@@ -19,12 +19,8 @@ type (
 templ List(model ListViewModel) {
 	@layout.Main(layout.MainProps{
 		Title:   "torrents",
-		Body:    listContent(model),
-		Scripts: []templ.Component{script.ConfirmPause()},
+		Toolbar: component.TorrentToolbar(component.TorrentToolbarProps{}),
+		Body:    component.TorrentTable(component.TorrentTableProps{Torrents: model.Torrents}),
+		Scripts: []templ.Component{script.Selection()},
 	})
-}
-
-templ listContent(model ListViewModel) {
-	@component.AddForm(component.AddFormProps{})
-	@component.TorrentTable(component.TorrentTableProps{Torrents: model.Torrents})
 }

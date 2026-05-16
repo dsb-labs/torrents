@@ -15,6 +15,8 @@ type (
 	MainProps struct {
 		// The page title rendered in the <title> tag.
 		Title string
+		// Optional toolbar rendered as a sibling of <header>, immediately below it.
+		Toolbar templ.Component
 		// The body content rendered inside <main>.
 		Body templ.Component
 		// Optional per-page vanilla-JS snippets, rendered at the end of <body>
@@ -53,7 +55,7 @@ func Main(props MainProps) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(props.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/layout/main.templ`, Line: 26, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `layout/main.templ`, Line: 28, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -67,7 +69,17 @@ func Main(props MainProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><h1 class=\"text-sm font-semibold text-gray-900 dark:text-white\">Torrents</h1></div></header><main class=\"mx-auto max-w-6xl px-4 py-6 space-y-6 sm:px-6 sm:py-8 sm:space-y-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><h1 class=\"text-sm font-semibold text-gray-900 dark:text-white\">Torrents</h1></div></header>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if props.Toolbar != nil {
+			templ_7745c5c3_Err = props.Toolbar.Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<main class=\"mx-auto max-w-6xl px-4 py-6 space-y-6 sm:px-6 sm:py-8 sm:space-y-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -75,7 +87,7 @@ func Main(props MainProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</main>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</main>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -85,7 +97,7 @@ func Main(props MainProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

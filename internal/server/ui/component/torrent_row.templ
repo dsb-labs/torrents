@@ -2,6 +2,7 @@ package component
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/dsb-labs/torrents/internal/server/service"
 )
@@ -15,29 +16,42 @@ type (
 )
 
 // TorrentRow renders a single torrent. The outer `<li>` is the HTMX swap
-// target. Inside, two layouts coexist: a card-style label/value grid visible
-// only on small viewports, and a horizontally-laid-out row visible only from
-// md upward. A coloured status dot sits next to the name in both layouts and
-// conveys the torrent's state (downloading / seeding / paused / pending).
+// target and carries data attributes the selection script reads to drive the
+// toolbar. The row checkbox has `hx-preserve` so htmx keeps the existing
+// checkbox node (and its checked state) across the table's polled swaps —
+// the row's `has-[.row-select:checked]:` background then reflects selection
+// from the preserved checkbox via CSS rather than via a JS-toggled class.
+//
+// One responsive layout: name / hash / label always render; the per-row
+// stats line collapses underneath on small viewports and the progress bar
+// and peers columns appear as siblings from md upward.
 templ TorrentRow(props TorrentRowProps) {
-	<li id={ "torrent-" + props.Torrent.InfoHash }>
-		<div class="space-y-3 p-4 md:hidden">
-			<div class="flex items-center gap-3">
-				<div class="min-w-0 flex-1">
-					<div class="flex min-w-0 items-center gap-2">
-						@StatusDot(StatusDotProps{Kind: torrentStatusKind(props.Torrent)})
-						<span class="min-w-0 truncate font-medium">{ displayName(props.Torrent) }</span>
-					</div>
-					<div class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate">{ props.Torrent.InfoHash }</div>
-					if props.Torrent.Label != "" {
-						<div class="mt-1 text-xs text-gray-700 dark:text-gray-300 truncate">{ props.Torrent.Label }</div>
-					}
+	<li
+		id={ "torrent-" + props.Torrent.InfoHash }
+		data-info-hash={ props.Torrent.InfoHash }
+		data-paused={ strconv.FormatBool(props.Torrent.Paused) }
+		class="flex items-start gap-3 p-4 has-[.row-select:checked]:bg-indigo-50 dark:has-[.row-select:checked]:bg-indigo-900/20 md:items-center md:gap-4 md:px-6 md:py-3"
+	>
+		<input
+			id={ "row-select-" + props.Torrent.InfoHash }
+			type="checkbox"
+			class="row-select mt-1 h-5 w-5 shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 md:mt-0"
+			aria-label="Select torrent"
+			data-info-hash={ props.Torrent.InfoHash }
+			hx-preserve="true"
+		/>
+		<div class="min-w-0 flex-1 space-y-3 md:space-y-0">
+			<div class="min-w-0">
+				<div class="flex min-w-0 items-center gap-2">
+					@StatusDot(StatusDotProps{Kind: torrentStatusKind(props.Torrent)})
+					<span class="min-w-0 truncate font-medium">{ displayName(props.Torrent) }</span>
 				</div>
-				<div class="shrink-0">
-					@RowActions(RowActionsProps{InfoHash: props.Torrent.InfoHash, Paused: props.Torrent.Paused})
-				</div>
+				<div class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate md:break-all">{ props.Torrent.InfoHash }</div>
+				if props.Torrent.Label != "" {
+					<div class="mt-1 text-xs text-gray-700 dark:text-gray-300 truncate">{ props.Torrent.Label }</div>
+				}
 			</div>
-			<div class="flex items-baseline gap-4 text-sm tabular-nums">
+			<div class="flex items-baseline gap-4 text-sm tabular-nums md:hidden">
 				if props.Torrent.Length > 0 {
 					<span class="font-medium text-gray-700 dark:text-gray-300">
 						{ fmt.Sprintf("%.0f%%", percent(ProgressBarProps{BytesCompleted: props.Torrent.BytesCompleted, Length: props.Torrent.Length})) }
@@ -54,31 +68,16 @@ templ TorrentRow(props TorrentRowProps) {
 				</span>
 			</div>
 		</div>
-		<div class="hidden items-center gap-4 px-6 py-3 md:flex">
-			<div class="min-w-0 flex-1">
-				<div class="flex min-w-0 items-center gap-2">
-					@StatusDot(StatusDotProps{Kind: torrentStatusKind(props.Torrent)})
-					<span class="min-w-0 truncate font-medium">{ displayName(props.Torrent) }</span>
-				</div>
-				<div class="font-mono text-xs text-gray-500 dark:text-gray-400 break-all">{ props.Torrent.InfoHash }</div>
-				if props.Torrent.Label != "" {
-					<div class="mt-1 text-xs text-gray-700 dark:text-gray-300 truncate">{ props.Torrent.Label }</div>
-				}
-			</div>
-			<div class="w-64 shrink-0">
-				@ProgressBar(ProgressBarProps{
-					BytesCompleted: props.Torrent.BytesCompleted,
-					Length:         props.Torrent.Length,
-				})
-			</div>
-			<div class="flex w-16 shrink-0 justify-end" title="seeders / connected peers">
-				<span class="inline-block min-w-[3rem] text-right text-sm tabular-nums text-gray-700 dark:text-gray-300">
-					{ fmt.Sprintf("%d / %d", props.Torrent.Seeders, props.Torrent.ActivePeers) }
-				</span>
-			</div>
-			<div class="flex w-44 shrink-0 justify-end">
-				@RowActions(RowActionsProps{InfoHash: props.Torrent.InfoHash, Paused: props.Torrent.Paused})
-			</div>
+		<div class="hidden w-64 shrink-0 md:block">
+			@ProgressBar(ProgressBarProps{
+				BytesCompleted: props.Torrent.BytesCompleted,
+				Length:         props.Torrent.Length,
+			})
+		</div>
+		<div class="hidden w-16 shrink-0 justify-end md:flex" title="seeders / connected peers">
+			<span class="inline-block min-w-[3rem] text-right text-sm tabular-nums text-gray-700 dark:text-gray-300">
+				{ fmt.Sprintf("%d / %d", props.Torrent.Seeders, props.Torrent.ActivePeers) }
+			</span>
 		</div>
 	</li>
 }

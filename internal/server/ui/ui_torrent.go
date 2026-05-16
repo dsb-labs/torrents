@@ -45,8 +45,9 @@ func NewTorrentHandler(torrents TorrentService) *TorrentHandler {
 // Register the UI endpoints onto the given http.ServeMux.
 func (h *TorrentHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc(http.MethodGet+" /{$}", h.List)
+	mux.HandleFunc(http.MethodGet+" /torrents/new", h.New)
+	mux.HandleFunc(http.MethodPost+" /torrents", h.Add)
 	mux.HandleFunc(http.MethodGet+" /ui/torrents", h.Table)
-	mux.HandleFunc(http.MethodPost+" /ui/torrents", h.Add)
 	mux.HandleFunc(http.MethodPost+" /ui/torrents/{hash}/pause", h.Pause)
 	mux.HandleFunc(http.MethodPost+" /ui/torrents/{hash}/resume", h.Resume)
 	mux.HandleFunc(http.MethodDelete+" /ui/torrents/{hash}", h.Delete)
@@ -61,6 +62,11 @@ func (h *TorrentHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render(r.Context(), w, http.StatusOK, torrentview.List, torrentview.ListViewModel{Torrents: torrents})
+}
+
+// New renders the dedicated Add Torrent page.
+func (h *TorrentHandler) New(w http.ResponseWriter, r *http.Request) {
+	render(r.Context(), w, http.StatusOK, torrentview.New, torrentview.NewViewModel{})
 }
 
 // Table renders the torrent table fragment (the HTMX polling target).
@@ -90,11 +96,13 @@ func (f addTorrentForm) Validate() error {
 	)
 }
 
-// Add handles the inline add-torrent form submission.
+// Add handles the Add Torrent page's form submission. On success it redirects
+// the browser back to the list page; on validation or service failure it
+// re-renders the new view with the submitted values and an error message.
 func (h *TorrentHandler) Add(w http.ResponseWriter, r *http.Request) {
 	form, err := decode[addTorrentForm](r)
 	if err != nil {
-		h.renderFormError(w, r, err.Error())
+		h.renderNewError(w, r, form, err.Error())
 		return
 	}
 
@@ -104,14 +112,14 @@ func (h *TorrentHandler) Add(w http.ResponseWriter, r *http.Request) {
 	})
 	switch {
 	case errors.Is(err, service.ErrTorrentAlreadyExists):
-		h.renderFormError(w, r, "torrent already exists")
+		h.renderNewError(w, r, form, "torrent already exists")
 		return
 	case err != nil:
-		h.renderFormError(w, r, fmt.Sprintf("failed to add torrent: %v", err))
+		h.renderNewError(w, r, form, fmt.Sprintf("failed to add torrent: %v", err))
 		return
 	}
 
-	h.Table(w, r)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // Pause pauses a torrent and renders the updated row.
@@ -151,8 +159,11 @@ func (h *TorrentHandler) toggle(w http.ResponseWriter, r *http.Request, action f
 	render(r.Context(), w, http.StatusOK, component.TorrentRow, component.TorrentRowProps{Torrent: t})
 }
 
-func (h *TorrentHandler) renderFormError(w http.ResponseWriter, r *http.Request, message string) {
-	w.Header().Set("HX-Retarget", "form")
-	w.Header().Set("HX-Reswap", "outerHTML")
-	render(r.Context(), w, http.StatusBadRequest, component.AddForm, component.AddFormProps{Error: message})
+func (h *TorrentHandler) renderNewError(w http.ResponseWriter, r *http.Request, form addTorrentForm, message string) {
+	render(r.Context(), w, http.StatusBadRequest, torrentview.New, torrentview.NewViewModel{
+		Magnet:    form.Magnet,
+		Label:     form.Label,
+		TargetDir: form.TargetDir,
+		Error:     message,
+	})
 }

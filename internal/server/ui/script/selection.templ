@@ -1,0 +1,117 @@
+package script
+
+// Selection wires the multi-select / bulk-action behaviour on the list page.
+// Each row checkbox carries `hx-preserve`, so the table's polled swap keeps
+// the existing checkbox nodes (and their checked state) intact — the script
+// therefore reads selection directly from the DOM rather than mirroring it
+// into a JS Set. It handles shift-click range selection, the master
+// select-all checkbox, and the toolbar's Pause / Resume / Delete buttons,
+// which fire N parallel htmx.ajax requests at the existing single-hash
+// endpoints and trigger a full-table refresh once they settle.
+templ Selection() {
+	<script>
+		(function() {
+			let lastChecked = null;
+
+			function rows() {
+				return Array.from(document.querySelectorAll('#torrents-table .row-select'));
+			}
+
+			function selectedHashes() {
+				return rows().filter(cb => cb.checked).map(cb => cb.dataset.infoHash);
+			}
+
+			function updateToolbar() {
+				const all = rows();
+				let pausedSelected = 0;
+				let runningSelected = 0;
+				for (const cb of all) {
+					if (!cb.checked) continue;
+					const li = cb.closest('li');
+					if (li && li.dataset.paused === 'true') {
+						pausedSelected++;
+					} else {
+						runningSelected++;
+					}
+				}
+				const count = pausedSelected + runningSelected;
+
+				const resume = document.getElementById('toolbar-resume');
+				const pause = document.getElementById('toolbar-pause');
+				const del = document.getElementById('toolbar-delete');
+				if (resume) resume.disabled = pausedSelected === 0;
+				if (pause) pause.disabled = runningSelected === 0;
+				if (del) del.disabled = count === 0;
+
+				const counter = document.getElementById('toolbar-selection-count');
+				if (counter) counter.textContent = count + ' selected';
+
+				const master = document.getElementById('select-all');
+				if (master) {
+					master.checked = count > 0 && count === all.length;
+					master.indeterminate = count > 0 && count < all.length;
+				}
+			}
+
+			document.addEventListener('click', function(evt) {
+				const cb = evt.target.closest('#torrents-table .row-select');
+				if (!cb) return;
+				if (evt.shiftKey && lastChecked && lastChecked !== cb) {
+					const all = rows();
+					const start = all.indexOf(lastChecked);
+					const end = all.indexOf(cb);
+					if (start !== -1 && end !== -1) {
+						const [lo, hi] = start < end ? [start, end] : [end, start];
+						for (let i = lo; i <= hi; i++) {
+							all[i].checked = cb.checked;
+						}
+					}
+				}
+				lastChecked = cb;
+				updateToolbar();
+			});
+
+			document.addEventListener('change', function(evt) {
+				const master = evt.target.closest('#select-all');
+				if (!master) return;
+				for (const cb of rows()) {
+					cb.checked = master.checked;
+				}
+				lastChecked = null;
+				updateToolbar();
+			});
+
+			function bulk(method, suffix) {
+				const hashes = selectedHashes();
+				if (hashes.length === 0) return;
+				const requests = hashes.map(hash => htmx.ajax(method, '/ui/torrents/' + hash + suffix, {
+					target: '#torrent-' + hash,
+					swap: 'outerHTML',
+				}));
+				Promise.allSettled(requests).then(() => {
+					htmx.ajax('GET', '/ui/torrents', { target: '#torrents-table', swap: 'outerHTML' });
+				});
+			}
+
+			document.addEventListener('click', function(evt) {
+				if (evt.target.closest('#toolbar-pause')) {
+					bulk('POST', '/pause');
+				} else if (evt.target.closest('#toolbar-resume')) {
+					bulk('POST', '/resume');
+				} else if (evt.target.closest('#toolbar-delete')) {
+					const hashes = selectedHashes();
+					if (hashes.length === 0) return;
+					const noun = hashes.length === 1 ? 'torrent' : 'torrents';
+					if (!confirm('Delete ' + hashes.length + ' ' + noun + '?')) return;
+					bulk('DELETE', '');
+				}
+			});
+
+			document.body.addEventListener('htmx:afterSwap', function() {
+				updateToolbar();
+			});
+
+			updateToolbar();
+		})();
+	</script>
+}

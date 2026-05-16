@@ -1,0 +1,98 @@
+package torrent
+
+import (
+	"github.com/dsb-labs/torrents/internal/server/ui/component"
+	"github.com/dsb-labs/torrents/internal/server/ui/layout"
+)
+
+type (
+	// The NewViewModel type contains the data rendered by the new-torrent page.
+	NewViewModel struct {
+		// Magnet pre-populates the magnet input when re-rendering after an error.
+		Magnet string
+		// Label pre-populates the label input when re-rendering after an error.
+		Label string
+		// TargetDir pre-populates the target directory input when re-rendering after an error.
+		TargetDir string
+		// Error is rendered above the form when set.
+		Error string
+	}
+)
+
+// New renders the dedicated Add Torrent page. The form is a plain HTML POST
+// to /torrents — on success the handler redirects back to /, on validation
+// or service errors the handler re-renders this view with Error populated.
+templ New(model NewViewModel) {
+	@layout.Main(layout.MainProps{
+		Title: "Add torrent",
+		Body:  newContent(model),
+	})
+}
+
+templ newContent(model NewViewModel) {
+	<div class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+		<form
+			method="POST"
+			action="/torrents"
+			onsubmit="this.querySelector('button[type=submit]').disabled = true"
+			class="space-y-4 p-4 sm:p-6"
+		>
+			if model.Error != "" {
+				<div class="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">
+					{ model.Error }
+				</div>
+			}
+			<div class="space-y-2">
+				<label for="magnet" class="block text-sm font-medium">Magnet URI</label>
+				<input
+					id="magnet"
+					name="magnet"
+					type="text"
+					required
+					value={ model.Magnet }
+					placeholder="magnet:?xt=urn:btih:..."
+					class="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+				/>
+			</div>
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<div class="space-y-2">
+					<label for="label" class="block text-sm font-medium">Label <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(optional)</span></label>
+					<input
+						id="label"
+						name="label"
+						type="text"
+						value={ model.Label }
+						class="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+					/>
+				</div>
+				<div class="space-y-2">
+					<label for="target_dir" class="block text-sm font-medium">Target directory <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(optional)</span></label>
+					<input
+						id="target_dir"
+						name="target_dir"
+						type="text"
+						value={ model.TargetDir }
+						class="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+					/>
+				</div>
+			</div>
+			<div class="flex items-center justify-end gap-2">
+				<a
+					href="/"
+					class="inline-flex items-center justify-center rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+				>
+					Cancel
+				</a>
+				<button
+					type="submit"
+					class="group inline-flex items-center justify-center gap-2 rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-wait disabled:opacity-75 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+				>
+					<span class="hidden group-disabled:inline-flex">
+						@component.IconSpinner()
+					</span>
+					<span>Add</span>
+				</button>
+			</div>
+		</form>
+	</div>
+}

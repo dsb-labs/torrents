@@ -459,6 +459,72 @@ func TestTorrentService_Resume(t *testing.T) {
 	}
 }
 
+func TestTorrentService_Files(t *testing.T) {
+	t.Parallel()
+
+	tt := []struct {
+		Name       string
+		SetupMocks func(*MockTorrentEngine, *MockTorrentRepository)
+		Assert     func(*testing.T, []service.File)
+		ExpectErr  error
+	}{
+		{
+			Name: "success",
+			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
+				repo.EXPECT().Get(mock.Anything, testInfoHash).Return(database.Torrent{InfoHash: testInfoHash}, nil).Once()
+				engine.EXPECT().Files(torrent.InfoHash(testInfoHash)).Return([]torrent.FileProgress{
+					{Path: "movie.mkv", Length: 1_000_000, BytesCompleted: 500_000},
+					{Path: "subs.srt", Length: 5000, BytesCompleted: 5000},
+				}, nil).Once()
+			},
+			Assert: func(t *testing.T, got []service.File) {
+				require.Len(t, got, 2)
+				assert.Equal(t, "movie.mkv", got[0].Path)
+				assert.EqualValues(t, 1_000_000, got[0].Length)
+				assert.EqualValues(t, 500_000, got[0].BytesCompleted)
+				assert.Equal(t, "subs.srt", got[1].Path)
+				assert.EqualValues(t, 5000, got[1].BytesCompleted)
+			},
+		},
+		{
+			Name: "paused returns nil",
+			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
+				repo.EXPECT().Get(mock.Anything, testInfoHash).Return(database.Torrent{InfoHash: testInfoHash, Paused: true}, nil).Once()
+				engine.EXPECT().Files(torrent.InfoHash(testInfoHash)).Return(nil, torrent.ErrNotFound).Once()
+			},
+			Assert: func(t *testing.T, got []service.File) {
+				assert.Nil(t, got)
+			},
+		},
+		{
+			Name: "not found",
+			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
+				repo.EXPECT().Get(mock.Anything, testInfoHash).Return(database.Torrent{}, database.ErrTorrentNotFound).Once()
+			},
+			ExpectErr: service.ErrTorrentNotFound,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.Name, func(t *testing.T) {
+			svc, engine, repo, _ := newServiceFixture(t)
+			if tc.SetupMocks != nil {
+				tc.SetupMocks(engine, repo)
+			}
+
+			got, err := svc.Files(t.Context(), testInfoHash)
+			if assertExpectedErr(t, err, tc.ExpectErr, "") {
+				return
+			}
+
+			require.NoError(t, err)
+			if tc.Assert != nil {
+				tc.Assert(t, got)
+			}
+		})
+	}
+}
+
 func TestTorrentService_Restore(t *testing.T) {
 	t.Parallel()
 

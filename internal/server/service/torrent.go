@@ -33,6 +33,8 @@ type (
 		Remove(ctx context.Context, hash torrent.InfoHash) error
 		// Snapshot should return the current live state of the torrent identified by hash.
 		Snapshot(hash torrent.InfoHash) (torrent.Progress, error)
+		// Files should return the per-file progress for the torrent identified by hash.
+		Files(hash torrent.InfoHash) ([]torrent.FileProgress, error)
 	}
 
 	// The PieceRepository interface describes the piece-completion cache
@@ -91,6 +93,16 @@ type (
 		ActivePeers int
 		// The number of those peers known to be seeders.
 		Seeders int
+	}
+
+	// The File type represents a single file within a managed torrent.
+	File struct {
+		// The file's path within the torrent.
+		Path string
+		// The total length of the file, in bytes.
+		Length int64
+		// How many bytes of the file have been downloaded.
+		BytesCompleted int64
 	}
 
 	// The AddOptions type carries the metadata supplied when adding a torrent.
@@ -154,6 +166,35 @@ func (s *TorrentService) Get(ctx context.Context, infoHash string) (Torrent, err
 	}
 
 	return s.hydrate(row), nil
+}
+
+// Files returns the per-file progress for the torrent identified by infoHash.
+// Returns nil with no error when the torrent is paused and file data is unavailable.
+// Returns ErrTorrentNotFound when no such torrent is managed.
+func (s *TorrentService) Files(ctx context.Context, infoHash string) ([]File, error) {
+	_, err := s.torrents.Get(ctx, infoHash)
+	switch {
+	case errors.Is(err, database.ErrTorrentNotFound):
+		return nil, ErrTorrentNotFound
+	case err != nil:
+		return nil, fmt.Errorf("failed to load torrent: %w", err)
+	}
+
+	fp, err := s.engine.Files(torrent.InfoHash(infoHash))
+	if err != nil {
+		return nil, nil
+	}
+
+	files := make([]File, len(fp))
+	for i, f := range fp {
+		files[i] = File{
+			Path:           f.Path,
+			Length:         f.Length,
+			BytesCompleted: f.BytesCompleted,
+		}
+	}
+
+	return files, nil
 }
 
 // List returns every managed torrent, with the engine's live state where available.

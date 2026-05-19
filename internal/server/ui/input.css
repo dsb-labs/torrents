@@ -15,6 +15,12 @@
 .htmx-request.htmx-indicator {
   display: inline-flex;
 }
+button.htmx-request > .btn-icon {
+  display: none;
+}
+button.htmx-request > .btn-spinner {
+  display: inline-flex;
+}
 
 /*
   Themed, circular checkboxes used for the bulk-select UI. We disable the

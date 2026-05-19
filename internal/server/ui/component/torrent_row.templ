@@ -44,7 +44,7 @@ templ TorrentRow(props TorrentRowProps) {
 			<div class="min-w-0">
 				<div class="flex min-w-0 items-center gap-2">
 					@StatusDot(StatusDotProps{Kind: torrentStatusKind(props.Torrent)})
-					<span class="min-w-0 truncate font-medium">{ displayName(props.Torrent) }</span>
+					<a href={ templ.SafeURL("/torrents/" + props.Torrent.InfoHash) } class="min-w-0 truncate font-medium hover:text-indigo-600 dark:hover:text-indigo-400">{ displayName(props.Torrent) }</a>
 				</div>
 				<div class="font-mono text-xs text-gray-500 dark:text-gray-400 truncate md:break-all">{ props.Torrent.InfoHash }</div>
 				if props.Torrent.Label != "" {

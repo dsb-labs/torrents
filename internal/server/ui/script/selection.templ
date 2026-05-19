@@ -94,11 +94,11 @@ templ Selection() {
 				const hashes = selectedHashes();
 				if (hashes.length === 0) return;
 				document.body.classList.add('bulk-in-flight');
-				if (button) button.dataset.loading = 'true';
+				if (button) button.classList.add('htmx-request');
 				const requests = hashes.map(hash => fetch('/ui/torrents/' + hash + suffix, { method: method }));
 				Promise.allSettled(requests).then(() => {
 					document.body.classList.remove('bulk-in-flight');
-					if (button) delete button.dataset.loading;
+					if (button) button.classList.remove('htmx-request');
 					htmx.ajax('GET', '/ui/torrents', { target: '#torrents-table', swap: 'outerHTML' });
 				});
 			}

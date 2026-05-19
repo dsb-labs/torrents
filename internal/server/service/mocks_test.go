@@ -172,6 +172,68 @@ func (_c *MockTorrentEngine_AddMagnet_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
+// Files provides a mock function for the type MockTorrentEngine
+func (_mock *MockTorrentEngine) Files(hash torrent.InfoHash) ([]torrent.FileProgress, error) {
+	ret := _mock.Called(hash)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Files")
+	}
+
+	var r0 []torrent.FileProgress
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(torrent.InfoHash) ([]torrent.FileProgress, error)); ok {
+		return returnFunc(hash)
+	}
+	if returnFunc, ok := ret.Get(0).(func(torrent.InfoHash) []torrent.FileProgress); ok {
+		r0 = returnFunc(hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]torrent.FileProgress)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(torrent.InfoHash) error); ok {
+		r1 = returnFunc(hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockTorrentEngine_Files_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Files'
+type MockTorrentEngine_Files_Call struct {
+	*mock.Call
+}
+
+// Files is a helper method to define mock.On call
+//   - hash torrent.InfoHash
+func (_e *MockTorrentEngine_Expecter) Files(hash interface{}) *MockTorrentEngine_Files_Call {
+	return &MockTorrentEngine_Files_Call{Call: _e.mock.On("Files", hash)}
+}
+
+func (_c *MockTorrentEngine_Files_Call) Run(run func(hash torrent.InfoHash)) *MockTorrentEngine_Files_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 torrent.InfoHash
+		if args[0] != nil {
+			arg0 = args[0].(torrent.InfoHash)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockTorrentEngine_Files_Call) Return(fileProgresss []torrent.FileProgress, err error) *MockTorrentEngine_Files_Call {
+	_c.Call.Return(fileProgresss, err)
+	return _c
+}
+
+func (_c *MockTorrentEngine_Files_Call) RunAndReturn(run func(hash torrent.InfoHash) ([]torrent.FileProgress, error)) *MockTorrentEngine_Files_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Remove provides a mock function for the type MockTorrentEngine
 func (_mock *MockTorrentEngine) Remove(ctx context.Context, hash torrent.InfoHash) error {
 	ret := _mock.Called(ctx, hash)

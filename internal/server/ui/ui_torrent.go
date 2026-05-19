@@ -21,6 +21,8 @@ type (
 		AddMagnet(ctx context.Context, uri string, opts service.AddOptions) (service.Torrent, error)
 		// Get should return the torrent identified by infoHash.
 		Get(ctx context.Context, infoHash string) (service.Torrent, error)
+		// Files should return the per-file progress for the torrent identified by infoHash.
+		Files(ctx context.Context, infoHash string) ([]service.File, error)
 		// List should return every managed torrent.
 		List(ctx context.Context) ([]service.Torrent, error)
 		// Remove should remove the torrent identified by infoHash.
@@ -46,8 +48,10 @@ func NewTorrentHandler(torrents TorrentService) *TorrentHandler {
 func (h *TorrentHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc(http.MethodGet+" /{$}", h.List)
 	mux.HandleFunc(http.MethodGet+" /torrents/new", h.New)
+	mux.HandleFunc(http.MethodGet+" /torrents/{hash}", h.Show)
 	mux.HandleFunc(http.MethodPost+" /torrents", h.Add)
 	mux.HandleFunc(http.MethodGet+" /ui/torrents", h.Table)
+	mux.HandleFunc(http.MethodGet+" /ui/torrents/{hash}", h.Detail)
 	mux.HandleFunc(http.MethodPost+" /ui/torrents/{hash}/pause", h.Pause)
 	mux.HandleFunc(http.MethodPost+" /ui/torrents/{hash}/resume", h.Resume)
 	mux.HandleFunc(http.MethodDelete+" /ui/torrents/{hash}", h.Delete)
@@ -62,6 +66,46 @@ func (h *TorrentHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render(r.Context(), w, http.StatusOK, torrentview.List, torrentview.ListViewModel{Torrents: torrents})
+}
+
+// Show renders the torrent detail page with metadata and file listing.
+func (h *TorrentHandler) Show(w http.ResponseWriter, r *http.Request) {
+	hash := r.PathValue("hash")
+
+	t, err := h.torrents.Get(r.Context(), hash)
+	switch {
+	case errors.Is(err, service.ErrTorrentNotFound):
+		http.Error(w, "torrent not found", http.StatusNotFound)
+		return
+	case err != nil:
+		http.Error(w, "failed to load torrent", http.StatusInternalServerError)
+		return
+	}
+
+	files, _ := h.torrents.Files(r.Context(), hash)
+
+	render(r.Context(), w, http.StatusOK, torrentview.Show, torrentview.ShowViewModel{
+		Torrent: t,
+		Files:   files,
+	})
+}
+
+// Detail renders the torrent detail fragment (the HTMX polling target).
+func (h *TorrentHandler) Detail(w http.ResponseWriter, r *http.Request) {
+	hash := r.PathValue("hash")
+
+	t, err := h.torrents.Get(r.Context(), hash)
+	if err != nil {
+		http.Error(w, "failed to load torrent", http.StatusInternalServerError)
+		return
+	}
+
+	files, _ := h.torrents.Files(r.Context(), hash)
+
+	render(r.Context(), w, http.StatusOK, torrentview.ShowDetail, torrentview.ShowViewModel{
+		Torrent: t,
+		Files:   files,
+	})
 }
 
 // New renders the dedicated Add Torrent page.

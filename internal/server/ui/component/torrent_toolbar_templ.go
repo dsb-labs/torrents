@@ -47,39 +47,47 @@ func TorrentToolbar(props TorrentToolbarProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<span class=\"sr-only md:not-sr-only\">Add</span></a> <button type=\"button\" id=\"toolbar-resume\" aria-label=\"Resume selected\" disabled class=\"group inline-flex items-center justify-center gap-1.5 rounded border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white data-[loading=true]:cursor-wait dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:hover:bg-gray-800\"><span class=\"inline-flex group-data-[loading=true]:hidden\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<span class=\"sr-only md:not-sr-only\">Add</span></a>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = IconPlay().Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ActionButton(ActionButtonProps{
+			ID:          "toolbar-resume",
+			AriaLabel:   "Resume selected",
+			Label:       "Resume",
+			SrOnlyLabel: true,
+			Icon:        IconPlay(),
+			Disabled:    true,
+			Class:       "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700",
+		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span> <span class=\"hidden group-data-[loading=true]:inline-flex\">")
+		templ_7745c5c3_Err = ActionButton(ActionButtonProps{
+			ID:          "toolbar-pause",
+			AriaLabel:   "Pause selected",
+			Label:       "Pause",
+			SrOnlyLabel: true,
+			Icon:        IconPause(),
+			Disabled:    true,
+			Class:       "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700",
+		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = IconSpinner().Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ActionButton(ActionButtonProps{
+			ID:          "toolbar-delete",
+			AriaLabel:   "Delete selected",
+			Label:       "Delete",
+			SrOnlyLabel: true,
+			Icon:        IconTrash(),
+			Disabled:    true,
+			Class:       "border-red-300 bg-white text-red-700 hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/30",
+		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span> <span class=\"sr-only md:not-sr-only\">Resume</span></button> <button type=\"button\" id=\"toolbar-pause\" aria-label=\"Pause selected\" disabled class=\"inline-flex items-center justify-center gap-1.5 rounded border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:hover:bg-gray-800\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = IconPause().Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<span class=\"sr-only md:not-sr-only\">Pause</span></button> <button type=\"button\" id=\"toolbar-delete\" aria-label=\"Delete selected\" disabled class=\"inline-flex items-center justify-center gap-1.5 rounded border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/30 dark:disabled:hover:bg-gray-800\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = IconTrash().Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<span class=\"sr-only md:not-sr-only\">Delete</span></button> <span id=\"toolbar-selection-count\" class=\"ml-auto min-w-[5.5rem] text-right text-xs tabular-nums text-gray-500 dark:text-gray-400\">0 selected</span></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<span id=\"toolbar-selection-count\" class=\"ml-auto min-w-[5.5rem] text-right text-xs tabular-nums text-gray-500 dark:text-gray-400\">0 selected</span></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

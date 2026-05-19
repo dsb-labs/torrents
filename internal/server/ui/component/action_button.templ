@@ -1,0 +1,50 @@
+package component
+
+type (
+	// The ActionButtonProps type contains fields used to configure the ActionButton component.
+	ActionButtonProps struct {
+		// The button's ID attribute.
+		ID string
+		// The accessible label for the button.
+		AriaLabel string
+		// The visible text label (rendered with sr-only on small screens when SrOnlyLabel is true).
+		Label string
+		// Whether the label is sr-only below md breakpoint.
+		SrOnlyLabel bool
+		// The icon component rendered in the button's default state.
+		Icon templ.Component
+		// Whether the button starts disabled.
+		Disabled bool
+		// Extra CSS classes appended to the button element.
+		Class string
+		// Additional HTML attributes (e.g. HTMX directives).
+		Attrs templ.Attributes
+	}
+)
+
+// ActionButton renders a button with a loading spinner that replaces the icon
+// when the button has the `htmx-request` class. Works with both HTMX-native
+// requests (hx-post etc.) and JS-driven bulk actions that manually toggle the
+// class.
+templ ActionButton(props ActionButtonProps) {
+	<button
+		type="button"
+		id={ props.ID }
+		aria-label={ props.AriaLabel }
+		disabled?={ props.Disabled }
+		class={ "inline-flex items-center justify-center gap-1.5 rounded border px-2.5 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-gray-800 " + props.Class }
+		{ props.Attrs... }
+	>
+		<span class="btn-icon inline-flex">
+			@props.Icon
+		</span>
+		<span class="btn-spinner hidden">
+			@IconSpinner()
+		</span>
+		if props.SrOnlyLabel {
+			<span class="sr-only md:not-sr-only">{ props.Label }</span>
+		} else {
+			<span>{ props.Label }</span>
+		}
+	</button>
+}

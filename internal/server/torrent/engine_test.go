@@ -195,6 +195,65 @@ func TestEngine_Snapshot(t *testing.T) {
 	})
 }
 
+func TestEngine_Files(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		mockClient := NewMockClient(t)
+		ft := &fakeTorrentWithFiles{
+			MockTorrent: NewMockTorrent(t),
+			files: []*anacrolix.File{},
+		}
+
+		mockClient.EXPECT().Torrent(testInfoHash()).Return(ft, true).Once()
+
+		engine := torrent.New(torrent.Config{
+			Logger: newTestLogger(t),
+			Client: mockClient,
+		})
+
+		files, err := engine.Files(testInfoHashHex)
+		require.NoError(t, err)
+		assert.Empty(t, files)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mockClient := NewMockClient(t)
+		mockClient.EXPECT().Torrent(testInfoHash()).Return(nil, false).Once()
+
+		engine := torrent.New(torrent.Config{
+			Logger: newTestLogger(t),
+			Client: mockClient,
+		})
+
+		_, err := engine.Files(testInfoHashHex)
+		assert.ErrorIs(t, err, torrent.ErrNotFound)
+	})
+
+	t.Run("no filer interface", func(t *testing.T) {
+		mockClient := NewMockClient(t)
+		mockTorrent := NewMockTorrent(t)
+		mockClient.EXPECT().Torrent(testInfoHash()).Return(mockTorrent, true).Once()
+
+		engine := torrent.New(torrent.Config{
+			Logger: newTestLogger(t),
+			Client: mockClient,
+		})
+
+		_, err := engine.Files(testInfoHashHex)
+		assert.ErrorIs(t, err, torrent.ErrNotFound)
+	})
+}
+
+type fakeTorrentWithFiles struct {
+	*MockTorrent
+	files []*anacrolix.File
+}
+
+func (f *fakeTorrentWithFiles) Files() []*anacrolix.File {
+	return f.files
+}
+
 func newTestLogger(t *testing.T) *slog.Logger {
 	t.Helper()
 

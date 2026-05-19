@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 
+	anacrolix "github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
 
@@ -19,6 +20,16 @@ var ErrNotFound = errors.New("torrent not found")
 type (
 	// The InfoHash type is a torrent's 40-character hex BitTorrent info hash.
 	InfoHash string
+
+	// The FileProgress type describes the live state of a single file in a torrent.
+	FileProgress struct {
+		// The file's path within the torrent.
+		Path string
+		// The total length of the file, in bytes.
+		Length int64
+		// How many bytes of the file have been downloaded.
+		BytesCompleted int64
+	}
 
 	// The Progress type describes the live state of a torrent.
 	Progress struct {
@@ -151,6 +162,40 @@ func (e *Engine) Snapshot(hash InfoHash) (Progress, error) {
 		ActivePeers:    stats.ActivePeers,
 		Seeders:        stats.ConnectedSeeders,
 	}, nil
+}
+
+// Files returns the per-file progress for the torrent identified by hash.
+// Returns ErrNotFound when the engine isn't tracking the given torrent or when
+// file-level data is unavailable.
+func (e *Engine) Files(hash InfoHash) ([]FileProgress, error) {
+	t, ok, err := e.find(hash)
+	switch {
+	case err != nil:
+		return nil, err
+	case !ok:
+		return nil, ErrNotFound
+	}
+
+	type filer interface {
+		Files() []*anacrolix.File
+	}
+
+	f, ok := t.(filer)
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	files := f.Files()
+	progress := make([]FileProgress, len(files))
+	for i, file := range files {
+		progress[i] = FileProgress{
+			Path:           file.DisplayPath(),
+			Length:         file.Length(),
+			BytesCompleted: file.BytesCompleted(),
+		}
+	}
+
+	return progress, nil
 }
 
 func (e *Engine) find(hash InfoHash) (Torrent, bool, error) {

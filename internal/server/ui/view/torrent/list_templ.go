@@ -46,7 +46,7 @@ func List(model ListViewModel) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = layout.Main(layout.MainProps{
-			Title:   "torrents",
+			Title:   "Torrents",
 			Toolbar: component.TorrentToolbar(component.TorrentToolbarProps{}),
 			Body:    component.TorrentTable(component.TorrentTableProps{Torrents: model.Torrents}),
 			Scripts: []templ.Component{script.Selection()},

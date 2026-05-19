@@ -5,9 +5,14 @@ package script
 // the existing checkbox nodes (and their checked state) intact — the script
 // therefore reads selection directly from the DOM rather than mirroring it
 // into a JS Set. It handles shift-click range selection, the master
-// select-all checkbox, and the toolbar's Pause / Resume / Delete buttons,
-// which fire N parallel htmx.ajax requests at the existing single-hash
-// endpoints and trigger a full-table refresh once they settle.
+// select-all checkbox, and the toolbar's Pause / Resume / Delete buttons.
+//
+// Bulk actions fire the per-hash requests via fetch (not htmx.ajax) so they
+// do not touch the DOM, then issue a single htmx.ajax to refresh the table
+// once all settle. A `bulk-in-flight` body class is set for the duration so
+// the table's 1s poll trigger filter pauses, avoiding a race between the
+// poll and the explicit refresh that would otherwise cause a visible
+// double-swap on mobile.
 templ Selection() {
 	<script>
 		(function() {
@@ -74,31 +79,39 @@ templ Selection() {
 			document.addEventListener('change', function(evt) {
 				const master = evt.target.closest('#select-all');
 				if (!master) return;
+				document.body.classList.add('bulk-in-flight');
 				for (const cb of rows()) {
 					cb.checked = master.checked;
 				}
 				lastChecked = null;
 				updateToolbar();
+				requestAnimationFrame(() => {
+					document.body.classList.remove('bulk-in-flight');
+				});
 			});
 
-			function bulk(method, suffix) {
+			function bulk(method, suffix, button) {
 				const hashes = selectedHashes();
 				if (hashes.length === 0) return;
-				const requests = hashes.map(hash => htmx.ajax(method, '/ui/torrents/' + hash + suffix, {
-					target: '#torrent-' + hash,
-					swap: 'outerHTML',
-				}));
+				document.body.classList.add('bulk-in-flight');
+				if (button) button.dataset.loading = 'true';
+				const requests = hashes.map(hash => fetch('/ui/torrents/' + hash + suffix, { method: method }));
 				Promise.allSettled(requests).then(() => {
+					document.body.classList.remove('bulk-in-flight');
+					if (button) delete button.dataset.loading;
 					htmx.ajax('GET', '/ui/torrents', { target: '#torrents-table', swap: 'outerHTML' });
 				});
 			}
 
 			document.addEventListener('click', function(evt) {
-				if (evt.target.closest('#toolbar-pause')) {
+				const action = evt.target.closest('#toolbar-pause, #toolbar-resume, #toolbar-delete');
+				if (!action) return;
+				if (document.body.classList.contains('bulk-in-flight')) return;
+				if (action.id === 'toolbar-pause') {
 					bulk('POST', '/pause');
-				} else if (evt.target.closest('#toolbar-resume')) {
-					bulk('POST', '/resume');
-				} else if (evt.target.closest('#toolbar-delete')) {
+				} else if (action.id === 'toolbar-resume') {
+					bulk('POST', '/resume', action);
+				} else if (action.id === 'toolbar-delete') {
 					const hashes = selectedHashes();
 					if (hashes.length === 0) return;
 					const noun = hashes.length === 1 ? 'torrent' : 'torrents';

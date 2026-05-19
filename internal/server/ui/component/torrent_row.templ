@@ -35,7 +35,7 @@ templ TorrentRow(props TorrentRowProps) {
 		<input
 			id={ "row-select-" + props.Torrent.InfoHash }
 			type="checkbox"
-			class="row-select mt-1 h-5 w-5 shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 md:mt-0"
+			class="checkbox row-select mt-1 md:mt-0"
 			aria-label="Select torrent"
 			data-info-hash={ props.Torrent.InfoHash }
 			hx-preserve="true"

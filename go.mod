@@ -152,3 +152,5 @@ tool (
 	github.com/vektra/mockery/v3
 	honnef.co/go/tools/cmd/staticcheck
 )
+
+ignore ./licenses

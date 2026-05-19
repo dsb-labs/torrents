@@ -18,7 +18,7 @@ type (
 // List renders the top-level torrent management page.
 templ List(model ListViewModel) {
 	@layout.Main(layout.MainProps{
-		Title:   "torrents",
+		Title:   "Torrents",
 		Toolbar: component.TorrentToolbar(component.TorrentToolbarProps{}),
 		Body:    component.TorrentTable(component.TorrentTableProps{Torrents: model.Torrents}),
 		Scripts: []templ.Component{script.Selection()},

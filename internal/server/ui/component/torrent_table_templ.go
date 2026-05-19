@@ -45,7 +45,7 @@ func TorrentTable(props TorrentTableProps) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"torrents-table\" hx-get=\"/ui/torrents\" hx-trigger=\"every 1s\" hx-swap=\"outerHTML\" class=\"overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"torrents-table\" hx-get=\"/ui/torrents\" hx-trigger=\"every 1s [!document.body.classList.contains('bulk-in-flight')]\" hx-swap=\"outerHTML\" class=\"overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -55,7 +55,7 @@ func TorrentTable(props TorrentTableProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"flex items-center gap-4 border-b border-gray-200 bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 md:px-6\"><input type=\"checkbox\" id=\"select-all\" aria-label=\"Select all torrents\" class=\"h-5 w-5 shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900\" hx-preserve=\"true\"><div class=\"hidden min-w-0 flex-1 md:block\">Torrent</div><div class=\"hidden w-64 shrink-0 md:block\">Progress</div><div class=\"hidden w-16 shrink-0 text-right md:block\">Peers</div></div><ul class=\"divide-y divide-gray-200 dark:divide-gray-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"flex items-center gap-4 border-b border-gray-200 bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 md:px-6\"><input type=\"checkbox\" id=\"select-all\" aria-label=\"Select all torrents\" class=\"checkbox\" hx-preserve=\"true\"><div class=\"hidden min-w-0 flex-1 md:block\">Torrent</div><div class=\"hidden w-64 shrink-0 md:block\">Progress</div><div class=\"hidden w-16 shrink-0 text-right md:block\">Peers</div></div><ul class=\"divide-y divide-gray-200 dark:divide-gray-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -15,3 +15,57 @@
 .htmx-request.htmx-indicator {
   display: inline-flex;
 }
+
+/*
+  Themed, circular checkboxes used for the bulk-select UI. We disable the
+  native rendering and paint our own so the checked / indeterminate states
+  follow the page's light/dark scheme instead of the browser default. The
+  check / minus glyphs are inline SVGs encoded as background images.
+*/
+.checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 1.25rem;
+  width: 1.25rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  border: 1px solid rgb(209 213 219);
+  background-color: rgb(255 255 255);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.checkbox:focus-visible {
+  outline: 2px solid rgb(99 102 241);
+  outline-offset: 2px;
+}
+
+.checkbox:checked,
+.checkbox:indeterminate {
+  background-color: rgb(79 70 229);
+  border-color: rgb(79 70 229);
+}
+
+.checkbox:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.5l3 3 7-7'/%3E%3C/svg%3E");
+}
+
+.checkbox:indeterminate {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M3 8h10'/%3E%3C/svg%3E");
+}
+
+@media (prefers-color-scheme: dark) {
+  .checkbox {
+    border-color: rgb(75 85 99);
+    background-color: rgb(55 65 81);
+  }
+
+  .checkbox:checked,
+  .checkbox:indeterminate {
+    background-color: rgb(99 102 241);
+    border-color: rgb(99 102 241);
+  }
+}

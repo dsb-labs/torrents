@@ -20,7 +20,7 @@ templ TorrentTable(props TorrentTableProps) {
 	<div
 		id="torrents-table"
 		hx-get="/ui/torrents"
-		hx-trigger="every 1s"
+		hx-trigger="every 1s [!document.body.classList.contains('bulk-in-flight')]"
 		hx-swap="outerHTML"
 		class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
 	>
@@ -34,7 +34,7 @@ templ TorrentTable(props TorrentTableProps) {
 					type="checkbox"
 					id="select-all"
 					aria-label="Select all torrents"
-					class="h-5 w-5 shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900"
+					class="checkbox"
 					hx-preserve="true"
 				/>
 				<div class="hidden min-w-0 flex-1 md:block">Torrent</div>

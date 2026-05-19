@@ -27,9 +27,14 @@ templ TorrentToolbar(props TorrentToolbarProps) {
 				id="toolbar-resume"
 				aria-label="Resume selected"
 				disabled
-				class="inline-flex items-center justify-center gap-1.5 rounded border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:hover:bg-gray-800"
+				class="group inline-flex items-center justify-center gap-1.5 rounded border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white data-[loading=true]:cursor-wait dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:hover:bg-gray-800"
 			>
-				@IconPlay()
+				<span class="inline-flex group-data-[loading=true]:hidden">
+					@IconPlay()
+				</span>
+				<span class="hidden group-data-[loading=true]:inline-flex">
+					@IconSpinner()
+				</span>
 				<span class="sr-only md:not-sr-only">Resume</span>
 			</button>
 			<button

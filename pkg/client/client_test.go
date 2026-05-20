@@ -121,7 +121,7 @@ func TestClient_AddFile(t *testing.T) {
 				assert.Equal(t, "multipart/form-data", mediaType)
 				require.NotEmpty(t, params["boundary"])
 
-				require.NoError(t, r.ParseMultipartForm(int64(1<<20)))
+				require.NoError(t, r.ParseMultipartForm(1<<20))
 				file, _, err := r.FormFile("file")
 				require.NoError(t, err)
 				defer file.Close()

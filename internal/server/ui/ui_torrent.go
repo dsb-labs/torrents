@@ -5,12 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 
 	"github.com/dsb-labs/torrents/internal/server/service"
 	"github.com/dsb-labs/torrents/internal/server/ui/component"
 	torrentview "github.com/dsb-labs/torrents/internal/server/ui/view/torrent"
+)
+
+var (
+	errMissingMagnet = errors.New("missing magnet")
+	errMissingFile   = errors.New("missing file")
 )
 
 type (
@@ -136,24 +140,16 @@ type (
 	}
 )
 
-// Add handles the Add Torrent page's form submission. The body is always
+// Add handles the Add Torrent page's form submission. The body is
 // multipart/form-data: when Source is "magnet" the Magnet field is used,
 // when Source is "file" the "file" part is forwarded to the service. On
 // success the browser is redirected back to the list page; on validation
 // or service failure the new view is re-rendered with the submitted values
 // and an error message.
 func (h *TorrentHandler) Add(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseMultipartForm(int64(1 << 20)); err != nil {
-		// Older browsers / fallbacks may submit application/x-www-form-urlencoded.
-		mediaType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
-		if mediaType != "application/x-www-form-urlencoded" {
-			h.renderNewError(w, r, addTorrentForm{}, fmt.Sprintf("failed to parse form: %v", err))
-			return
-		}
-		if err = r.ParseForm(); err != nil {
-			h.renderNewError(w, r, addTorrentForm{}, fmt.Sprintf("failed to parse form: %v", err))
-			return
-		}
+	if err := r.ParseMultipartForm(1 << 20); err != nil {
+		h.renderNewError(w, r, addTorrentForm{}, fmt.Sprintf("failed to parse form: %v", err))
+		return
 	}
 
 	form := addTorrentForm{
@@ -167,12 +163,12 @@ func (h *TorrentHandler) Add(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var err error
-	switch form.Source {
-	case "file":
+	if form.Source == "file" {
 		err = h.addFile(r, form)
-	default:
+	} else {
 		err = h.addMagnet(r, form)
 	}
+
 	switch {
 	case errors.Is(err, errMissingMagnet):
 		h.renderNewError(w, r, form, "magnet URI is required")
@@ -193,11 +189,6 @@ func (h *TorrentHandler) Add(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
-
-var (
-	errMissingMagnet = errors.New("missing magnet")
-	errMissingFile   = errors.New("missing file")
-)
 
 func (h *TorrentHandler) addMagnet(r *http.Request, form addTorrentForm) error {
 	if form.Magnet == "" {

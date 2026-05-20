@@ -164,14 +164,14 @@ func (api *TorrentAPI) addMagnet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *TorrentAPI) addFile(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseMultipartForm(int64(1 << 20)); err != nil {
+	if err := r.ParseMultipartForm(1 << 20); err != nil {
 		writeErrorf(w, http.StatusBadRequest, "failed to parse multipart form: %v", err)
 		return
 	}
 
 	file, _, err := r.FormFile("file")
 	if err != nil {
-		writeErrorf(w, http.StatusBadRequest, "missing %q part", "file")
+		writeErrorf(w, http.StatusBadRequest, "missing file part")
 		return
 	}
 	defer file.Close()

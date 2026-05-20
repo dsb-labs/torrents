@@ -37,22 +37,17 @@ func New(address string) (*Client, error) {
 }
 
 func do[Response any](ctx context.Context, c *Client, method, endpoint string, request any) (Response, error) {
-	var zero Response
-
-	var (
-		body        io.Reader
-		contentType string
-	)
-	if request != nil {
-		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(request); err != nil {
-			return zero, fmt.Errorf("failed to encode request: %w", err)
-		}
-		body = &buf
-		contentType = "application/json"
+	if request == nil {
+		return doBody[Response](ctx, c, method, endpoint, nil, "")
 	}
 
-	return doBody[Response](ctx, c, method, endpoint, body, contentType)
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(request); err != nil {
+		var zero Response
+		return zero, fmt.Errorf("failed to encode request: %w", err)
+	}
+
+	return doBody[Response](ctx, c, method, endpoint, &buf, "application/json")
 }
 
 func doBody[Response any](ctx context.Context, c *Client, method, endpoint string, body io.Reader, contentType string) (Response, error) {

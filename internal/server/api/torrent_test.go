@@ -188,11 +188,6 @@ func TestTorrentAPI_Add(t *testing.T) {
 	}
 }
 
-type multipartBody struct {
-	File   []byte
-	Fields map[string]string
-}
-
 func TestTorrentAPI_List(t *testing.T) {
 	t.Parallel()
 
@@ -465,6 +460,13 @@ func TestRecovery(t *testing.T) {
 	body := decodeJSON[api.ErrorResponse](t, w.Body)
 	assert.Contains(t, body.Message, "internal server error")
 }
+
+type (
+	multipartBody struct {
+		File   []byte
+		Fields map[string]string
+	}
+)
 
 func requestBody(t *testing.T, request api.AddTorrentRequest, raw, contentType string, mp *multipartBody) (io.Reader, string) {
 	t.Helper()

@@ -76,36 +76,49 @@ func (c *Client) AddMagnet(ctx context.Context, magnet, label, targetDir string)
 // AddFile adds a torrent by uploading a .torrent metainfo file read from r.
 // The label and targetDir are optional.
 func (c *Client) AddFile(ctx context.Context, r io.Reader, label, targetDir string) (Torrent, error) {
-	var buf bytes.Buffer
-	w := multipart.NewWriter(&buf)
-
-	part, err := w.CreateFormFile("file", "torrent.torrent")
+	body, contentType, err := buildAddFileBody(r, label, targetDir)
 	if err != nil {
-		return Torrent{}, fmt.Errorf("failed to build multipart body: %w", err)
-	}
-	if _, err = io.Copy(part, r); err != nil {
-		return Torrent{}, fmt.Errorf("failed to read torrent file: %w", err)
-	}
-	if label != "" {
-		if err = w.WriteField("label", label); err != nil {
-			return Torrent{}, fmt.Errorf("failed to build multipart body: %w", err)
-		}
-	}
-	if targetDir != "" {
-		if err = w.WriteField("targetDir", targetDir); err != nil {
-			return Torrent{}, fmt.Errorf("failed to build multipart body: %w", err)
-		}
-	}
-	if err = w.Close(); err != nil {
-		return Torrent{}, fmt.Errorf("failed to build multipart body: %w", err)
+		return Torrent{}, err
 	}
 
-	response, err := doBody[api.AddTorrentResponse](ctx, c, http.MethodPost, "/api/v1/torrents", &buf, w.FormDataContentType())
+	response, err := doBody[api.AddTorrentResponse](ctx, c, http.MethodPost, "/api/v1/torrents", body, contentType)
 	if err != nil {
 		return Torrent{}, err
 	}
 
 	return fromAPI(response.Torrent), nil
+}
+
+func buildAddFileBody(r io.Reader, label, targetDir string) (io.Reader, string, error) {
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+
+	part, err := w.CreateFormFile("file", "torrent.torrent")
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to build multipart body: %w", err)
+	}
+
+	if _, err = io.Copy(part, r); err != nil {
+		return nil, "", fmt.Errorf("failed to read torrent file: %w", err)
+	}
+
+	if label != "" {
+		if err = w.WriteField("label", label); err != nil {
+			return nil, "", fmt.Errorf("failed to build multipart body: %w", err)
+		}
+	}
+
+	if targetDir != "" {
+		if err = w.WriteField("targetDir", targetDir); err != nil {
+			return nil, "", fmt.Errorf("failed to build multipart body: %w", err)
+		}
+	}
+
+	if err = w.Close(); err != nil {
+		return nil, "", fmt.Errorf("failed to build multipart body: %w", err)
+	}
+
+	return &buf, w.FormDataContentType(), nil
 }
 
 // List returns every managed torrent.

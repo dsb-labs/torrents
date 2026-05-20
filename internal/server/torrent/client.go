@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/anacrolix/chansync/events"
+	anacrolixlog "github.com/anacrolix/log"
 	anacrolix "github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/storage"
@@ -65,9 +66,11 @@ type (
 // drop-and-re-add pause/resume cycle and across server restarts. The caller
 // owns its lifecycle.
 //
-// The supplied logger receives anacrolix/torrent's internal output via
-// ClientConfig.Slogger, so the log level set on the application's slog
-// handler controls the verbosity of the torrent runtime.
+// Every line anacrolix/torrent emits is funnelled through the supplied
+// logger at debug level, regardless of the level anacrolix originally
+// chose. The application's slog level controls whether any of it
+// surfaces — at the default info level the runtime stays quiet, flip to
+// debug to see it.
 func NewClient(logger *slog.Logger, dataDir string, completion storage.PieceCompletion) (Client, error) {
 	if dataDir == "" {
 		return nil, errors.New("data directory is required")
@@ -80,10 +83,17 @@ func NewClient(logger *slog.Logger, dataDir string, completion storage.PieceComp
 		return nil, fmt.Errorf("failed to create data directory: %w", err)
 	}
 
+	debugWriter := slog.NewLogLogger(logger.With("component", "anacrolix").Handler(), slog.LevelDebug).Writer()
+	al := anacrolixlog.NewLogger()
+	al.SetHandlers(anacrolixlog.StreamHandler{
+		W:   debugWriter,
+		Fmt: anacrolixlog.LineFormatter,
+	})
+
 	cfg := anacrolix.NewDefaultClientConfig()
 	cfg.DataDir = dataDir
 	cfg.DefaultStorage = storage.NewFileWithCompletion(dataDir, completion)
-	cfg.Slogger = logger.With("component", "anacrolix")
+	cfg.Logger = al
 	// Anacrolix 1.61.0's webseed scheduler panics with `panicif.False`
 	// from updateWebseedRequests when an in-progress torrent is dropped
 	// while the timer is mid-iteration, taking down the whole process.

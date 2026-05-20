@@ -1,0 +1,31 @@
+package script
+
+// AddTorrent wires the Source radio toggle on the Add Torrent page so
+// that selecting "Magnet" or "Upload file" hides the inactive input
+// pane. The form's data-source attribute is updated alongside, which
+// preserves the selection during in-page interactions even though the
+// server re-renders the page on validation errors.
+templ AddTorrent() {
+	<script>
+		(function() {
+			const form = document.getElementById('add-torrent-form');
+			if (!form) return;
+
+			function applySource(source) {
+				form.dataset.source = source;
+				for (const pane of form.querySelectorAll('[data-source-pane]')) {
+					pane.hidden = pane.dataset.sourcePane !== source;
+				}
+			}
+
+			form.addEventListener('change', function(evt) {
+				const radio = evt.target.closest('input[type=radio][name=source]');
+				if (!radio || !radio.checked) return;
+				applySource(radio.value);
+			});
+
+			const checked = form.querySelector('input[type=radio][name=source]:checked');
+			applySource(checked ? checked.value : 'magnet');
+		})();
+	</script>
+}

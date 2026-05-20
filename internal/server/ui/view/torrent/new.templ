@@ -3,11 +3,15 @@ package torrent
 import (
 	"github.com/dsb-labs/torrents/internal/server/ui/component"
 	"github.com/dsb-labs/torrents/internal/server/ui/layout"
+	"github.com/dsb-labs/torrents/internal/server/ui/script"
 )
 
 type (
 	// The NewViewModel type contains the data rendered by the new-torrent page.
 	NewViewModel struct {
+		// Source selects which input is active on the form; "magnet" or
+		// "file". Empty defaults to "magnet".
+		Source string
 		// Magnet pre-populates the magnet input when re-rendering after an error.
 		Magnet string
 		// Label pre-populates the label input when re-rendering after an error.
@@ -19,21 +23,25 @@ type (
 	}
 )
 
-// New renders the dedicated Add Torrent page. The form is a plain HTML POST
+// New renders the dedicated Add Torrent page. The form is a multipart POST
 // to /torrents — on success the handler redirects back to /, on validation
 // or service errors the handler re-renders this view with Error populated.
 templ New(model NewViewModel) {
 	@layout.Main(layout.MainProps{
-		Title: "Add torrent",
-		Body:  newContent(model),
+		Title:   "Add torrent",
+		Body:    newContent(model),
+		Scripts: []templ.Component{script.AddTorrent()},
 	})
 }
 
 templ newContent(model NewViewModel) {
 	<div class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
 		<form
+			id="add-torrent-form"
 			method="POST"
 			action="/torrents"
+			enctype="multipart/form-data"
+			data-source={ sourceOrDefault(model.Source) }
 			onsubmit="this.querySelector('button[type=submit]').disabled = true"
 			class="space-y-4 p-4 sm:p-6"
 		>
@@ -42,16 +50,50 @@ templ newContent(model NewViewModel) {
 					{ model.Error }
 				</div>
 			}
-			<div class="space-y-2">
+			<fieldset class="space-y-2">
+				<legend class="block text-sm font-medium">Source</legend>
+				<div class="flex flex-wrap gap-4 text-sm">
+					<label class="inline-flex items-center gap-2">
+						<input
+							type="radio"
+							name="source"
+							value="magnet"
+							checked?={ sourceOrDefault(model.Source) == "magnet" }
+							class="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+						/>
+						<span>Magnet URI</span>
+					</label>
+					<label class="inline-flex items-center gap-2">
+						<input
+							type="radio"
+							name="source"
+							value="file"
+							checked?={ sourceOrDefault(model.Source) == "file" }
+							class="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+						/>
+						<span>Upload file</span>
+					</label>
+				</div>
+			</fieldset>
+			<div data-source-pane="magnet" class="space-y-2" hidden?={ sourceOrDefault(model.Source) != "magnet" }>
 				<label for="magnet" class="block text-sm font-medium">Magnet URI</label>
 				<input
 					id="magnet"
 					name="magnet"
 					type="text"
-					required
 					value={ model.Magnet }
 					placeholder="magnet:?xt=urn:btih:..."
 					class="block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+				/>
+			</div>
+			<div data-source-pane="file" class="space-y-2" hidden?={ sourceOrDefault(model.Source) != "file" }>
+				<label for="file" class="block text-sm font-medium">Torrent file</label>
+				<input
+					id="file"
+					name="file"
+					type="file"
+					accept=".torrent,application/x-bittorrent"
+					class="block w-full text-sm file:mr-3 file:rounded file:border-0 file:bg-indigo-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-indigo-500 dark:file:bg-indigo-500 dark:hover:file:bg-indigo-400"
 				/>
 			</div>
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -95,4 +137,11 @@ templ newContent(model NewViewModel) {
 			</div>
 		</form>
 	</div>
+}
+
+func sourceOrDefault(source string) string {
+	if source == "file" {
+		return "file"
+	}
+	return "magnet"
 }

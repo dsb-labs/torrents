@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"mime"
 	"net/http"
-
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 
 	"github.com/dsb-labs/torrents/internal/server/service"
 	"github.com/dsb-labs/torrents/internal/server/ui/component"
@@ -19,6 +19,8 @@ type (
 	TorrentService interface {
 		// AddMagnet should add a torrent identified by the given magnet URI.
 		AddMagnet(ctx context.Context, uri string, opts service.AddOptions) (service.Torrent, error)
+		// AddFile should add a torrent from a .torrent metainfo file read from r.
+		AddFile(ctx context.Context, r io.Reader, opts service.AddOptions) (service.Torrent, error)
 		// Get should return the torrent identified by infoHash.
 		Get(ctx context.Context, infoHash string) (service.Torrent, error)
 		// Files should return the per-file progress for the torrent identified by infoHash.
@@ -127,34 +129,60 @@ func (h *TorrentHandler) Table(w http.ResponseWriter, r *http.Request) {
 type (
 	// The addTorrentForm type holds the form fields submitted to add a torrent.
 	addTorrentForm struct {
-		Magnet    string `form:"magnet"`
-		Label     string `form:"label"`
-		TargetDir string `form:"target_dir"`
+		Source    string
+		Magnet    string
+		Label     string
+		TargetDir string
 	}
 )
 
-// Validate the form fields.
-func (f addTorrentForm) Validate() error {
-	return validation.ValidateStruct(&f,
-		validation.Field(&f.Magnet, validation.Required),
-	)
-}
-
-// Add handles the Add Torrent page's form submission. On success it redirects
-// the browser back to the list page; on validation or service failure it
-// re-renders the new view with the submitted values and an error message.
+// Add handles the Add Torrent page's form submission. The body is always
+// multipart/form-data: when Source is "magnet" the Magnet field is used,
+// when Source is "file" the "file" part is forwarded to the service. On
+// success the browser is redirected back to the list page; on validation
+// or service failure the new view is re-rendered with the submitted values
+// and an error message.
 func (h *TorrentHandler) Add(w http.ResponseWriter, r *http.Request) {
-	form, err := decode[addTorrentForm](r)
-	if err != nil {
-		h.renderNewError(w, r, form, err.Error())
-		return
+	if err := r.ParseMultipartForm(int64(1 << 20)); err != nil {
+		// Older browsers / fallbacks may submit application/x-www-form-urlencoded.
+		mediaType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+		if mediaType != "application/x-www-form-urlencoded" {
+			h.renderNewError(w, r, addTorrentForm{}, fmt.Sprintf("failed to parse form: %v", err))
+			return
+		}
+		if err = r.ParseForm(); err != nil {
+			h.renderNewError(w, r, addTorrentForm{}, fmt.Sprintf("failed to parse form: %v", err))
+			return
+		}
 	}
 
-	_, err = h.torrents.AddMagnet(r.Context(), form.Magnet, service.AddOptions{
-		Label:     form.Label,
-		TargetDir: form.TargetDir,
-	})
+	form := addTorrentForm{
+		Source:    r.FormValue("source"),
+		Magnet:    r.FormValue("magnet"),
+		Label:     r.FormValue("label"),
+		TargetDir: r.FormValue("target_dir"),
+	}
+	if form.Source == "" {
+		form.Source = "magnet"
+	}
+
+	var err error
+	switch form.Source {
+	case "file":
+		err = h.addFile(r, form)
+	default:
+		err = h.addMagnet(r, form)
+	}
 	switch {
+	case errors.Is(err, errMissingMagnet):
+		h.renderNewError(w, r, form, "magnet URI is required")
+		return
+	case errors.Is(err, errMissingFile):
+		h.renderNewError(w, r, form, "a torrent file is required")
+		return
+	case errors.Is(err, service.ErrInvalidTorrentFile):
+		h.renderNewError(w, r, form, "invalid torrent file")
+		return
 	case errors.Is(err, service.ErrTorrentAlreadyExists):
 		h.renderNewError(w, r, form, "torrent already exists")
 		return
@@ -164,6 +192,37 @@ func (h *TorrentHandler) Add(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+var (
+	errMissingMagnet = errors.New("missing magnet")
+	errMissingFile   = errors.New("missing file")
+)
+
+func (h *TorrentHandler) addMagnet(r *http.Request, form addTorrentForm) error {
+	if form.Magnet == "" {
+		return errMissingMagnet
+	}
+
+	_, err := h.torrents.AddMagnet(r.Context(), form.Magnet, service.AddOptions{
+		Label:     form.Label,
+		TargetDir: form.TargetDir,
+	})
+	return err
+}
+
+func (h *TorrentHandler) addFile(r *http.Request, form addTorrentForm) error {
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		return errMissingFile
+	}
+	defer file.Close()
+
+	_, err = h.torrents.AddFile(r.Context(), file, service.AddOptions{
+		Label:     form.Label,
+		TargetDir: form.TargetDir,
+	})
+	return err
 }
 
 // Pause pauses a torrent and renders the updated row.
@@ -205,6 +264,7 @@ func (h *TorrentHandler) toggle(w http.ResponseWriter, r *http.Request, action f
 
 func (h *TorrentHandler) renderNewError(w http.ResponseWriter, r *http.Request, form addTorrentForm, message string) {
 	render(r.Context(), w, http.StatusBadRequest, torrentview.New, torrentview.NewViewModel{
+		Source:    form.Source,
 		Magnet:    form.Magnet,
 		Label:     form.Label,
 		TargetDir: form.TargetDir,

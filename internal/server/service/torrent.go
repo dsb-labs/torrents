@@ -20,6 +20,9 @@ var (
 	ErrTorrentNotFound = errors.New("torrent not found")
 	// ErrTorrentAlreadyExists is returned when adding a torrent that is already present.
 	ErrTorrentAlreadyExists = errors.New("torrent already exists")
+	// ErrInvalidTorrentFile is returned when AddFile is given data that does
+	// not parse as a valid .torrent metainfo file.
+	ErrInvalidTorrentFile = errors.New("invalid torrent file")
 )
 
 type (
@@ -144,10 +147,14 @@ func (s *TorrentService) AddMagnet(ctx context.Context, uri string, opts AddOpti
 }
 
 // AddFile adds a torrent from a .torrent metainfo file read from r and persists it.
-// Returns ErrTorrentAlreadyExists when the torrent is already managed.
+// Returns ErrTorrentAlreadyExists when the torrent is already managed, or
+// ErrInvalidTorrentFile when r does not contain a valid .torrent file.
 func (s *TorrentService) AddFile(ctx context.Context, r io.Reader, opts AddOptions) (Torrent, error) {
 	hash, err := s.engine.AddFile(ctx, r)
-	if err != nil {
+	switch {
+	case errors.Is(err, torrent.ErrInvalidFile):
+		return Torrent{}, ErrInvalidTorrentFile
+	case err != nil:
 		return Torrent{}, fmt.Errorf("failed to add torrent file: %w", err)
 	}
 

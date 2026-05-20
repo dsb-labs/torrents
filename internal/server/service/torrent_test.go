@@ -133,6 +133,14 @@ func TestTorrentService_AddFile(t *testing.T) {
 				assert.Equal(t, testInfoHash, got.InfoHash)
 			},
 		},
+		{
+			Name: "invalid torrent file",
+			Body: bytes.NewReader([]byte("not a torrent")),
+			SetupMocks: func(engine *MockTorrentEngine, repo *MockTorrentRepository) {
+				engine.EXPECT().AddFile(mock.Anything, mock.Anything).Return("", torrent.ErrInvalidFile).Once()
+			},
+			ExpectErr: service.ErrInvalidTorrentFile,
+		},
 	}
 
 	for _, tc := range tt {

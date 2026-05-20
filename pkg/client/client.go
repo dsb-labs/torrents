@@ -39,14 +39,24 @@ func New(address string) (*Client, error) {
 func do[Response any](ctx context.Context, c *Client, method, endpoint string, request any) (Response, error) {
 	var zero Response
 
-	var body io.Reader
+	var (
+		body        io.Reader
+		contentType string
+	)
 	if request != nil {
 		var buf bytes.Buffer
 		if err := json.NewEncoder(&buf).Encode(request); err != nil {
 			return zero, fmt.Errorf("failed to encode request: %w", err)
 		}
 		body = &buf
+		contentType = "application/json"
 	}
+
+	return doBody[Response](ctx, c, method, endpoint, body, contentType)
+}
+
+func doBody[Response any](ctx context.Context, c *Client, method, endpoint string, body io.Reader, contentType string) (Response, error) {
+	var zero Response
 
 	target := *c.base
 	target.Path = path.Join(target.Path, endpoint)
@@ -56,8 +66,8 @@ func do[Response any](ctx context.Context, c *Client, method, endpoint string, r
 		return zero, fmt.Errorf("failed to construct request: %w", err)
 	}
 
-	if request != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	req.Header.Set("Accept", "application/json")
 

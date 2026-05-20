@@ -1,9 +1,13 @@
 package client_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"mime"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -82,6 +86,83 @@ func TestClient_AddMagnet(t *testing.T) {
 				assert.True(t, client.IsConflict(err))
 				return
 			case tc.ExpectBadRequest:
+				assert.True(t, client.IsBadRequest(err))
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tc.Expected, got)
+		})
+	}
+}
+
+func TestClient_AddFile(t *testing.T) {
+	t.Parallel()
+
+	const torrentBytes = "fake .torrent payload"
+
+	tt := []struct {
+		Name             string
+		Handler          http.HandlerFunc
+		File             io.Reader
+		Label            string
+		TargetDir        string
+		Expected         client.Torrent
+		ExpectBadRequest bool
+	}{
+		{
+			Name: "success",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, "/api/v1/torrents", r.URL.Path)
+
+				mediaType, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+				require.NoError(t, err)
+				assert.Equal(t, "multipart/form-data", mediaType)
+				require.NotEmpty(t, params["boundary"])
+
+				require.NoError(t, r.ParseMultipartForm(int64(1<<20)))
+				file, _, err := r.FormFile("file")
+				require.NoError(t, err)
+				defer file.Close()
+
+				body, err := io.ReadAll(file)
+				require.NoError(t, err)
+				assert.Equal(t, torrentBytes, string(body))
+				assert.Equal(t, "iso", r.FormValue("label"))
+				assert.Equal(t, "/data", r.FormValue("targetDir"))
+
+				w.WriteHeader(http.StatusCreated)
+				_ = json.NewEncoder(w).Encode(api.AddTorrentResponse{
+					Torrent: api.Torrent{InfoHash: testInfoHash, Name: "linux.iso"},
+				})
+			},
+			File:      strings.NewReader(torrentBytes),
+			Label:     "iso",
+			TargetDir: "/data",
+			Expected:  client.Torrent{InfoHash: testInfoHash, Name: "linux.iso"},
+		},
+		{
+			Name: "bad request",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(api.ErrorResponse{Message: "invalid torrent file"})
+			},
+			File:             bytes.NewReader([]byte("junk")),
+			ExpectBadRequest: true,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.Name, func(t *testing.T) {
+			server := httptest.NewServer(tc.Handler)
+			t.Cleanup(server.Close)
+
+			c, err := client.New(server.URL)
+			require.NoError(t, err)
+
+			got, err := c.AddFile(t.Context(), tc.File, tc.Label, tc.TargetDir)
+			if tc.ExpectBadRequest {
 				assert.True(t, client.IsBadRequest(err))
 				return
 			}

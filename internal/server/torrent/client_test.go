@@ -14,19 +14,19 @@ func TestNewClient(t *testing.T) {
 	t.Parallel()
 
 	t.Run("success", func(t *testing.T) {
-		client, err := torrent.NewClient(t.TempDir(), storage.NewMapPieceCompletion())
+		client, err := torrent.NewClient(newTestLogger(t), t.TempDir(), storage.NewMapPieceCompletion())
 		require.NoError(t, err)
 
 		require.NoError(t, client.Close())
 	})
 
 	t.Run("missing data dir", func(t *testing.T) {
-		_, err := torrent.NewClient("", storage.NewMapPieceCompletion())
+		_, err := torrent.NewClient(newTestLogger(t), "", storage.NewMapPieceCompletion())
 		assert.ErrorContains(t, err, "data directory")
 	})
 
 	t.Run("missing piece completion", func(t *testing.T) {
-		_, err := torrent.NewClient(t.TempDir(), nil)
+		_, err := torrent.NewClient(newTestLogger(t), t.TempDir(), nil)
 		assert.ErrorContains(t, err, "piece completion")
 	})
 }

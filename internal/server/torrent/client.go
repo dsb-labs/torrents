@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/anacrolix/chansync/events"
@@ -63,7 +64,11 @@ type (
 // The supplied PieceCompletion is used to persist piece state across the
 // drop-and-re-add pause/resume cycle and across server restarts. The caller
 // owns its lifecycle.
-func NewClient(dataDir string, completion storage.PieceCompletion) (Client, error) {
+//
+// The supplied logger receives anacrolix/torrent's internal output via
+// ClientConfig.Slogger, so the log level set on the application's slog
+// handler controls the verbosity of the torrent runtime.
+func NewClient(logger *slog.Logger, dataDir string, completion storage.PieceCompletion) (Client, error) {
 	if dataDir == "" {
 		return nil, errors.New("data directory is required")
 	}
@@ -78,6 +83,7 @@ func NewClient(dataDir string, completion storage.PieceCompletion) (Client, erro
 	cfg := anacrolix.NewDefaultClientConfig()
 	cfg.DataDir = dataDir
 	cfg.DefaultStorage = storage.NewFileWithCompletion(dataDir, completion)
+	cfg.Slogger = logger.With("component", "anacrolix")
 
 	inner, err := anacrolix.NewClient(cfg)
 	if err != nil {

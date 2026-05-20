@@ -48,7 +48,7 @@ func Run(ctx context.Context, config Config) error {
 		return fmt.Errorf("failed to load piece completion cache: %w", err)
 	}
 
-	client, err := torrent.NewClient(filepath.Join(config.Data.Directory, "downloads"), pieces)
+	client, err := torrent.NewClient(logger, filepath.Join(config.Data.Directory, "downloads"), pieces)
 	if err != nil {
 		return fmt.Errorf("failed to start torrent client: %w", err)
 	}

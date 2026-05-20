@@ -84,6 +84,10 @@ func NewClient(logger *slog.Logger, dataDir string, completion storage.PieceComp
 	cfg.DataDir = dataDir
 	cfg.DefaultStorage = storage.NewFileWithCompletion(dataDir, completion)
 	cfg.Slogger = logger.With("component", "anacrolix")
+	// Anacrolix 1.61.0's webseed scheduler panics with `panicif.False`
+	// from updateWebseedRequests when an in-progress torrent is dropped
+	// while the timer is mid-iteration, taking down the whole process.
+	cfg.DisableWebseeds = true
 
 	inner, err := anacrolix.NewClient(cfg)
 	if err != nil {

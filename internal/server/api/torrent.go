@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"errors"
+	"io"
+	"mime"
 	"net/http"
 	"time"
 
@@ -17,6 +19,8 @@ type (
 	TorrentService interface {
 		// AddMagnet should add a torrent identified by the given magnet URI.
 		AddMagnet(ctx context.Context, uri string, opts service.AddOptions) (service.Torrent, error)
+		// AddFile should add a torrent from a .torrent metainfo file read from r.
+		AddFile(ctx context.Context, r io.Reader, opts service.AddOptions) (service.Torrent, error)
 		// Get should return the torrent identified by infoHash.
 		Get(ctx context.Context, infoHash string) (service.Torrent, error)
 		// List should return every managed torrent.
@@ -121,8 +125,22 @@ func newTorrent(t service.Torrent) Torrent {
 	}
 }
 
-// Add adds a torrent by magnet URI.
+// Add adds a torrent. The request body is either a JSON AddTorrentRequest
+// (magnet URI) or a multipart/form-data upload of a .torrent file; the
+// handler dispatches by Content-Type.
 func (api *TorrentAPI) Add(w http.ResponseWriter, r *http.Request) {
+	mediaType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	switch mediaType {
+	case "multipart/form-data":
+		api.addFile(w, r)
+	case "", "application/json":
+		api.addMagnet(w, r)
+	default:
+		writeErrorf(w, http.StatusUnsupportedMediaType, "unsupported content type %q", mediaType)
+	}
+}
+
+func (api *TorrentAPI) addMagnet(w http.ResponseWriter, r *http.Request) {
 	request, err := decode[AddTorrentRequest](r.Body)
 	if err != nil {
 		writeErrorf(w, http.StatusBadRequest, "%v", err)
@@ -134,6 +152,38 @@ func (api *TorrentAPI) Add(w http.ResponseWriter, r *http.Request) {
 		TargetDir: request.TargetDir,
 	})
 	switch {
+	case errors.Is(err, service.ErrTorrentAlreadyExists):
+		writeErrorf(w, http.StatusConflict, "torrent already exists")
+		return
+	case err != nil:
+		writeErrorf(w, http.StatusInternalServerError, "failed to add torrent: %v", err)
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, AddTorrentResponse{Torrent: newTorrent(t)})
+}
+
+func (api *TorrentAPI) addFile(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(int64(1 << 20)); err != nil {
+		writeErrorf(w, http.StatusBadRequest, "failed to parse multipart form: %v", err)
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		writeErrorf(w, http.StatusBadRequest, "missing %q part", "file")
+		return
+	}
+	defer file.Close()
+
+	t, err := api.torrents.AddFile(r.Context(), file, service.AddOptions{
+		Label:     r.FormValue("label"),
+		TargetDir: r.FormValue("targetDir"),
+	})
+	switch {
+	case errors.Is(err, service.ErrInvalidTorrentFile):
+		writeErrorf(w, http.StatusBadRequest, "invalid torrent file")
+		return
 	case errors.Is(err, service.ErrTorrentAlreadyExists):
 		writeErrorf(w, http.StatusConflict, "torrent already exists")
 		return

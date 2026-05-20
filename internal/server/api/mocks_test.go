@@ -6,6 +6,7 @@ package api_test
 
 import (
 	"context"
+	"io"
 
 	"github.com/dsb-labs/torrents/internal/server/service"
 	mock "github.com/stretchr/testify/mock"
@@ -107,6 +108,78 @@ type MockTorrentService_Expecter struct {
 
 func (_m *MockTorrentService) EXPECT() *MockTorrentService_Expecter {
 	return &MockTorrentService_Expecter{mock: &_m.Mock}
+}
+
+// AddFile provides a mock function for the type MockTorrentService
+func (_mock *MockTorrentService) AddFile(ctx context.Context, r io.Reader, opts service.AddOptions) (service.Torrent, error) {
+	ret := _mock.Called(ctx, r, opts)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddFile")
+	}
+
+	var r0 service.Torrent
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, io.Reader, service.AddOptions) (service.Torrent, error)); ok {
+		return returnFunc(ctx, r, opts)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, io.Reader, service.AddOptions) service.Torrent); ok {
+		r0 = returnFunc(ctx, r, opts)
+	} else {
+		r0 = ret.Get(0).(service.Torrent)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, io.Reader, service.AddOptions) error); ok {
+		r1 = returnFunc(ctx, r, opts)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockTorrentService_AddFile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddFile'
+type MockTorrentService_AddFile_Call struct {
+	*mock.Call
+}
+
+// AddFile is a helper method to define mock.On call
+//   - ctx context.Context
+//   - r io.Reader
+//   - opts service.AddOptions
+func (_e *MockTorrentService_Expecter) AddFile(ctx interface{}, r interface{}, opts interface{}) *MockTorrentService_AddFile_Call {
+	return &MockTorrentService_AddFile_Call{Call: _e.mock.On("AddFile", ctx, r, opts)}
+}
+
+func (_c *MockTorrentService_AddFile_Call) Run(run func(ctx context.Context, r io.Reader, opts service.AddOptions)) *MockTorrentService_AddFile_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 io.Reader
+		if args[1] != nil {
+			arg1 = args[1].(io.Reader)
+		}
+		var arg2 service.AddOptions
+		if args[2] != nil {
+			arg2 = args[2].(service.AddOptions)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockTorrentService_AddFile_Call) Return(torrent service.Torrent, err error) *MockTorrentService_AddFile_Call {
+	_c.Call.Return(torrent, err)
+	return _c
+}
+
+func (_c *MockTorrentService_AddFile_Call) RunAndReturn(run func(ctx context.Context, r io.Reader, opts service.AddOptions) (service.Torrent, error)) *MockTorrentService_AddFile_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // AddMagnet provides a mock function for the type MockTorrentService

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -40,6 +41,8 @@ func TestTorrentAPI_Add(t *testing.T) {
 		Name           string
 		Request        api.AddTorrentRequest
 		RawBody        string
+		ContentType    string
+		Multipart      *multipartBody
 		SetupMock      func(*MockTorrentService)
 		ExpectedStatus int
 		ExpectedBody   func(*testing.T, *httptest.ResponseRecorder)
@@ -100,6 +103,67 @@ func TestTorrentAPI_Add(t *testing.T) {
 			},
 			ExpectedStatus: http.StatusInternalServerError,
 		},
+		{
+			Name:           "unsupported content type",
+			RawBody:        "hello",
+			ContentType:    "text/plain",
+			ExpectedStatus: http.StatusUnsupportedMediaType,
+		},
+		{
+			Name: "multipart success",
+			Multipart: &multipartBody{
+				File:   []byte("fake .torrent bytes"),
+				Fields: map[string]string{"label": "iso", "targetDir": "/data/downloads"},
+			},
+			SetupMock: func(svc *MockTorrentService) {
+				svc.EXPECT().AddFile(mock.Anything, mock.Anything, service.AddOptions{
+					Label:     "iso",
+					TargetDir: "/data/downloads",
+				}).Return(successTorrent, nil).Once()
+			},
+			ExpectedStatus: http.StatusCreated,
+			ExpectedBody: func(t *testing.T, w *httptest.ResponseRecorder) {
+				body := decodeJSON[api.AddTorrentResponse](t, w.Body)
+				assert.Equal(t, testInfoHash, body.Torrent.InfoHash)
+			},
+		},
+		{
+			Name:           "multipart missing file",
+			Multipart:      &multipartBody{Fields: map[string]string{"label": "iso"}},
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody: func(t *testing.T, w *httptest.ResponseRecorder) {
+				body := decodeJSON[api.ErrorResponse](t, w.Body)
+				assert.Contains(t, body.Message, "file")
+			},
+		},
+		{
+			Name:      "multipart invalid file",
+			Multipart: &multipartBody{File: []byte("not a torrent")},
+			SetupMock: func(svc *MockTorrentService) {
+				svc.EXPECT().AddFile(mock.Anything, mock.Anything, mock.Anything).Return(service.Torrent{}, service.ErrInvalidTorrentFile).Once()
+			},
+			ExpectedStatus: http.StatusBadRequest,
+			ExpectedBody: func(t *testing.T, w *httptest.ResponseRecorder) {
+				body := decodeJSON[api.ErrorResponse](t, w.Body)
+				assert.Contains(t, body.Message, "invalid torrent file")
+			},
+		},
+		{
+			Name:      "multipart duplicate",
+			Multipart: &multipartBody{File: []byte("fake .torrent")},
+			SetupMock: func(svc *MockTorrentService) {
+				svc.EXPECT().AddFile(mock.Anything, mock.Anything, mock.Anything).Return(service.Torrent{}, service.ErrTorrentAlreadyExists).Once()
+			},
+			ExpectedStatus: http.StatusConflict,
+		},
+		{
+			Name:      "multipart internal error",
+			Multipart: &multipartBody{File: []byte("fake .torrent")},
+			SetupMock: func(svc *MockTorrentService) {
+				svc.EXPECT().AddFile(mock.Anything, mock.Anything, mock.Anything).Return(service.Torrent{}, errors.New("boom")).Once()
+			},
+			ExpectedStatus: http.StatusInternalServerError,
+		},
 	}
 
 	for _, tc := range tt {
@@ -109,8 +173,9 @@ func TestTorrentAPI_Add(t *testing.T) {
 				tc.SetupMock(svc)
 			}
 
-			body := requestBody(t, tc.Request, tc.RawBody)
+			body, contentType := requestBody(t, tc.Request, tc.RawBody, tc.ContentType, tc.Multipart)
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/torrents", body)
+			req.Header.Set("Content-Type", contentType)
 			w := httptest.NewRecorder()
 
 			api.NewTorrentAPI(svc).Add(w, req)
@@ -121,6 +186,11 @@ func TestTorrentAPI_Add(t *testing.T) {
 			}
 		})
 	}
+}
+
+type multipartBody struct {
+	File   []byte
+	Fields map[string]string
 }
 
 func TestTorrentAPI_List(t *testing.T) {
@@ -396,16 +466,35 @@ func TestRecovery(t *testing.T) {
 	assert.Contains(t, body.Message, "internal server error")
 }
 
-func requestBody(t *testing.T, request api.AddTorrentRequest, raw string) io.Reader {
+func requestBody(t *testing.T, request api.AddTorrentRequest, raw, contentType string, mp *multipartBody) (io.Reader, string) {
 	t.Helper()
 
-	if raw != "" {
-		return strings.NewReader(raw)
+	switch {
+	case mp != nil:
+		var buf bytes.Buffer
+		w := multipart.NewWriter(&buf)
+		if mp.File != nil {
+			part, err := w.CreateFormFile("file", "test.torrent")
+			require.NoError(t, err)
+			_, err = part.Write(mp.File)
+			require.NoError(t, err)
+		}
+		for k, v := range mp.Fields {
+			require.NoError(t, w.WriteField(k, v))
+		}
+		require.NoError(t, w.Close())
+		return &buf, w.FormDataContentType()
+	case raw != "":
+		ct := contentType
+		if ct == "" {
+			ct = "application/json"
+		}
+		return strings.NewReader(raw), ct
+	default:
+		var buf bytes.Buffer
+		require.NoError(t, json.NewEncoder(&buf).Encode(request))
+		return &buf, "application/json"
 	}
-
-	var buf bytes.Buffer
-	require.NoError(t, json.NewEncoder(&buf).Encode(request))
-	return &buf
 }
 
 func decodeJSON[T any](t *testing.T, body io.Reader) T {

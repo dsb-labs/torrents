@@ -100,7 +100,7 @@ func TestEngine_AddFile(t *testing.T) {
 		})
 
 		_, err := engine.AddFile(t.Context(), bytes.NewReader([]byte("not a torrent file")))
-		assert.ErrorContains(t, err, "failed to parse torrent file")
+		assert.ErrorIs(t, err, torrent.ErrInvalidFile)
 	})
 }
 

@@ -13,9 +13,14 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-// ErrNotFound is returned when no torrent with the given info hash is
-// tracked by the engine.
-var ErrNotFound = errors.New("torrent not found")
+var (
+	// ErrNotFound is returned when no torrent with the given info hash is
+	// tracked by the engine.
+	ErrNotFound = errors.New("torrent not found")
+	// ErrInvalidFile is returned when AddFile is given data that does not
+	// parse as a valid .torrent metainfo file.
+	ErrInvalidFile = errors.New("invalid torrent file")
+)
 
 type (
 	// The InfoHash type is a torrent's 40-character hex BitTorrent info hash.
@@ -99,7 +104,7 @@ func (e *Engine) AddMagnet(ctx context.Context, uri string) (InfoHash, error) {
 func (e *Engine) AddFile(ctx context.Context, r io.Reader) (InfoHash, error) {
 	mi, err := metainfo.Load(r)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse torrent file: %w", err)
+		return "", fmt.Errorf("%w: %v", ErrInvalidFile, err)
 	}
 
 	t, err := e.client.AddTorrent(mi)

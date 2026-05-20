@@ -177,33 +177,41 @@ func newContent(model NewViewModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "><label for=\"file\" class=\"block text-sm font-medium\">Torrent file</label> <input id=\"file\" name=\"file\" type=\"file\" accept=\".torrent,application/x-bittorrent\" class=\"block w-full text-sm file:mr-3 file:rounded file:border-0 file:bg-indigo-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-indigo-500 dark:file:bg-indigo-500 dark:hover:file:bg-indigo-400\"></div><div class=\"grid grid-cols-1 gap-4 sm:grid-cols-2\"><div class=\"space-y-2\"><label for=\"label\" class=\"block text-sm font-medium\">Label <span class=\"text-xs font-normal text-gray-500 dark:text-gray-400\">(optional)</span></label> <input id=\"label\" name=\"label\" type=\"text\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "><span class=\"block text-sm font-medium\">Torrent file</span> <label for=\"file\" id=\"file-dropzone\" data-state=\"idle\" class=\"flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center text-sm text-gray-600 transition-colors hover:border-indigo-400 hover:bg-indigo-50 data-[state=dragover]:border-indigo-500 data-[state=dragover]:bg-indigo-50 data-[state=selected]:border-indigo-400 data-[state=selected]:bg-indigo-50/50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-indigo-400 dark:hover:bg-gray-800 dark:data-[state=dragover]:border-indigo-400 dark:data-[state=dragover]:bg-gray-800 dark:data-[state=selected]:bg-gray-800\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = component.IconUpload("h-8 w-8 text-gray-400 dark:text-gray-500").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span id=\"file-dropzone-message\" class=\"font-medium\">Drop a .torrent file here, or <span class=\"text-indigo-600 underline dark:text-indigo-400\">browse</span></span> <span class=\"text-xs text-gray-500 dark:text-gray-400\">.torrent files only</span></label> <input id=\"file\" name=\"file\" type=\"file\" accept=\".torrent,application/x-bittorrent\" class=\"sr-only\"></div><div class=\"grid grid-cols-1 gap-4 sm:grid-cols-2\"><div class=\"space-y-2\"><label for=\"label\" class=\"block text-sm font-medium\">Label <span class=\"text-xs font-normal text-gray-500 dark:text-gray-400\">(optional)</span></label> <input id=\"label\" name=\"label\" type=\"text\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(model.Label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/new.templ`, Line: 106, Col: 25}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/new.templ`, Line: 118, Col: 25}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" class=\"block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400\"></div><div class=\"space-y-2\"><label for=\"target_dir\" class=\"block text-sm font-medium\">Target directory <span class=\"text-xs font-normal text-gray-500 dark:text-gray-400\">(optional)</span></label> <input id=\"target_dir\" name=\"target_dir\" type=\"text\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" class=\"block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400\"></div><div class=\"space-y-2\"><label for=\"target_dir\" class=\"block text-sm font-medium\">Target directory <span class=\"text-xs font-normal text-gray-500 dark:text-gray-400\">(optional)</span></label> <input id=\"target_dir\" name=\"target_dir\" type=\"text\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(model.TargetDir)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/new.templ`, Line: 116, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/new.templ`, Line: 128, Col: 29}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" class=\"block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400\"></div></div><div class=\"flex items-center justify-end gap-2\"><a href=\"/\" class=\"inline-flex items-center justify-center rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700\">Cancel</a> <button type=\"submit\" class=\"group inline-flex items-center justify-center gap-2 rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-wait disabled:opacity-75 dark:bg-indigo-500 dark:hover:bg-indigo-400\"><span class=\"hidden group-disabled:inline-flex\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400\"></div></div><div class=\"flex items-center justify-end gap-2\"><a href=\"/\" class=\"inline-flex items-center justify-center rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700\">Cancel</a> <button type=\"submit\" class=\"group inline-flex items-center justify-center gap-2 rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-wait disabled:opacity-75 dark:bg-indigo-500 dark:hover:bg-indigo-400\"><span class=\"hidden group-disabled:inline-flex\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -211,7 +219,7 @@ func newContent(model NewViewModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span> <span>Add</span></button></div></form></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span> <span>Add</span></button></div></form></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

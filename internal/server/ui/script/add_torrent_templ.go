@@ -8,11 +8,12 @@ package script
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// AddTorrent wires the Source radio toggle on the Add Torrent page so
-// that selecting "Magnet" or "Upload file" hides the inactive input
-// pane. The form's data-source attribute is updated alongside, which
-// preserves the selection during in-page interactions even though the
-// server re-renders the page on validation errors.
+// AddTorrent wires the Source radio toggle and file drop zone on the Add
+// Torrent page. The radio change handler hides the inactive pane and
+// updates the form's data-source attribute. The drop zone reflects drag /
+// selected state via data-state for Tailwind styling, accepts dropped
+// files, and shows the chosen filename inside the label once one is
+// selected.
 func AddTorrent() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -34,7 +35,7 @@ func AddTorrent() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n\t\t(function() {\n\t\t\tconst form = document.getElementById('add-torrent-form');\n\t\t\tif (!form) return;\n\n\t\t\tfunction applySource(source) {\n\t\t\t\tform.dataset.source = source;\n\t\t\t\tfor (const pane of form.querySelectorAll('[data-source-pane]')) {\n\t\t\t\t\tpane.hidden = pane.dataset.sourcePane !== source;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tform.addEventListener('change', function(evt) {\n\t\t\t\tconst radio = evt.target.closest('input[type=radio][name=source]');\n\t\t\t\tif (!radio || !radio.checked) return;\n\t\t\t\tapplySource(radio.value);\n\t\t\t});\n\n\t\t\tconst checked = form.querySelector('input[type=radio][name=source]:checked');\n\t\t\tapplySource(checked ? checked.value : 'magnet');\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n\t\t(function() {\n\t\t\tconst form = document.getElementById('add-torrent-form');\n\t\t\tif (!form) return;\n\n\t\t\tfunction applySource(source) {\n\t\t\t\tform.dataset.source = source;\n\t\t\t\tfor (const pane of form.querySelectorAll('[data-source-pane]')) {\n\t\t\t\t\tpane.hidden = pane.dataset.sourcePane !== source;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tform.addEventListener('change', function(evt) {\n\t\t\t\tconst radio = evt.target.closest('input[type=radio][name=source]');\n\t\t\t\tif (!radio || !radio.checked) return;\n\t\t\t\tapplySource(radio.value);\n\t\t\t});\n\n\t\t\tconst checked = form.querySelector('input[type=radio][name=source]:checked');\n\t\t\tapplySource(checked ? checked.value : 'magnet');\n\n\t\t\tconst dropzone = document.getElementById('file-dropzone');\n\t\t\tconst fileInput = document.getElementById('file');\n\t\t\tconst message = document.getElementById('file-dropzone-message');\n\t\t\tif (!dropzone || !fileInput || !message) return;\n\n\t\t\tconst defaultMessage = message.innerHTML;\n\n\t\t\tfunction setSelected(name) {\n\t\t\t\tdropzone.dataset.state = 'selected';\n\t\t\t\tmessage.textContent = name;\n\t\t\t}\n\n\t\t\tfunction reset() {\n\t\t\t\tdropzone.dataset.state = 'idle';\n\t\t\t\tmessage.innerHTML = defaultMessage;\n\t\t\t}\n\n\t\t\tfileInput.addEventListener('change', function() {\n\t\t\t\tif (fileInput.files && fileInput.files.length > 0) {\n\t\t\t\t\tsetSelected(fileInput.files[0].name);\n\t\t\t\t} else {\n\t\t\t\t\treset();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\tlet dragDepth = 0;\n\n\t\t\tdropzone.addEventListener('dragenter', function(evt) {\n\t\t\t\tevt.preventDefault();\n\t\t\t\tdragDepth++;\n\t\t\t\tdropzone.dataset.state = 'dragover';\n\t\t\t});\n\n\t\t\tdropzone.addEventListener('dragover', function(evt) {\n\t\t\t\tevt.preventDefault();\n\t\t\t\tevt.dataTransfer.dropEffect = 'copy';\n\t\t\t});\n\n\t\t\tdropzone.addEventListener('dragleave', function(evt) {\n\t\t\t\tevt.preventDefault();\n\t\t\t\tdragDepth = Math.max(0, dragDepth - 1);\n\t\t\t\tif (dragDepth === 0) {\n\t\t\t\t\tdropzone.dataset.state = fileInput.files.length > 0 ? 'selected' : 'idle';\n\t\t\t\t}\n\t\t\t});\n\n\t\t\tdropzone.addEventListener('drop', function(evt) {\n\t\t\t\tevt.preventDefault();\n\t\t\t\tdragDepth = 0;\n\t\t\t\tconst files = evt.dataTransfer && evt.dataTransfer.files;\n\t\t\t\tif (!files || files.length === 0) {\n\t\t\t\t\treset();\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tfileInput.files = files;\n\t\t\t\tsetSelected(files[0].name);\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

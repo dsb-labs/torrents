@@ -237,7 +237,7 @@ func (h *TorrentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	deleteFiles := r.URL.Query().Get("files") == "true"
 
 	if err := h.torrents.Remove(r.Context(), hash, deleteFiles); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to delete torrent", http.StatusInternalServerError)
 		return
 	}
 
@@ -247,13 +247,13 @@ func (h *TorrentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *TorrentHandler) toggle(w http.ResponseWriter, r *http.Request, action func(context.Context, string) error) {
 	hash := r.PathValue("hash")
 	if err := action(r.Context(), hash); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to toggle torrent", http.StatusInternalServerError)
 		return
 	}
 
 	t, err := h.torrents.Get(r.Context(), hash)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to load torrent", http.StatusInternalServerError)
 		return
 	}
 

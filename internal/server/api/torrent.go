@@ -48,12 +48,12 @@ func NewTorrentAPI(torrents TorrentService) *TorrentAPI {
 
 // Register the HTTP endpoints onto the given http.ServeMux.
 func (api *TorrentAPI) Register(mux *http.ServeMux) {
-	mux.HandleFunc(http.MethodPost+" /api/v1/torrents", api.Add)
-	mux.HandleFunc(http.MethodGet+" /api/v1/torrents", api.List)
-	mux.HandleFunc(http.MethodGet+" /api/v1/torrents/{hash}", api.Get)
-	mux.HandleFunc(http.MethodDelete+" /api/v1/torrents/{hash}", api.Remove)
-	mux.HandleFunc(http.MethodPost+" /api/v1/torrents/{hash}/pause", api.Pause)
-	mux.HandleFunc(http.MethodPost+" /api/v1/torrents/{hash}/resume", api.Resume)
+	mux.HandleFunc("POST /api/v1/torrents", api.Add)
+	mux.HandleFunc("GET /api/v1/torrents", api.List)
+	mux.HandleFunc("GET /api/v1/torrents/{hash}", api.Get)
+	mux.HandleFunc("DELETE /api/v1/torrents/{hash}", api.Remove)
+	mux.HandleFunc("POST /api/v1/torrents/{hash}/pause", api.Pause)
+	mux.HandleFunc("POST /api/v1/torrents/{hash}/resume", api.Resume)
 }
 
 type (

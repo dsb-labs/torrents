@@ -54,15 +54,15 @@ func NewTorrentHandler(torrents TorrentService) *TorrentHandler {
 
 // Register the UI endpoints onto the given http.ServeMux.
 func (h *TorrentHandler) Register(mux *http.ServeMux) {
-	mux.HandleFunc(http.MethodGet+" /{$}", h.List)
-	mux.HandleFunc(http.MethodGet+" /torrents/new", h.New)
-	mux.HandleFunc(http.MethodGet+" /torrents/{hash}", h.Show)
-	mux.HandleFunc(http.MethodPost+" /torrents", h.Add)
-	mux.HandleFunc(http.MethodGet+" /ui/torrents", h.Table)
-	mux.HandleFunc(http.MethodGet+" /ui/torrents/{hash}", h.Detail)
-	mux.HandleFunc(http.MethodPost+" /ui/torrents/{hash}/pause", h.Pause)
-	mux.HandleFunc(http.MethodPost+" /ui/torrents/{hash}/resume", h.Resume)
-	mux.HandleFunc(http.MethodDelete+" /ui/torrents/{hash}", h.Delete)
+	mux.HandleFunc("GET /{$}", h.List)
+	mux.HandleFunc("GET /torrents/new", h.New)
+	mux.HandleFunc("GET /torrents/{hash}", h.Show)
+	mux.HandleFunc("POST /torrents", h.Add)
+	mux.HandleFunc("GET /ui/torrents", h.Table)
+	mux.HandleFunc("GET /ui/torrents/{hash}", h.Detail)
+	mux.HandleFunc("POST /ui/torrents/{hash}/pause", h.Pause)
+	mux.HandleFunc("POST /ui/torrents/{hash}/resume", h.Resume)
+	mux.HandleFunc("DELETE /ui/torrents/{hash}", h.Delete)
 }
 
 // List renders the full torrent management page.

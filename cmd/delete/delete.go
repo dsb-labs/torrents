@@ -24,7 +24,7 @@ func Command() *cobra.Command {
 				return err
 			}
 
-			if err = c.Remove(cmd.Context(), args[0]); err != nil {
+			if err = c.Remove(cmd.Context(), args[0], false); err != nil {
 				return fmt.Errorf("failed to delete torrent: %w", err)
 			}
 

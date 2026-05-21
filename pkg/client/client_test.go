@@ -273,6 +273,7 @@ func TestClient_Remove(t *testing.T) {
 
 	tt := []struct {
 		Name           string
+		DeleteFiles    bool
 		Handler        http.HandlerFunc
 		ExpectNotFound bool
 	}{
@@ -281,6 +282,18 @@ func TestClient_Remove(t *testing.T) {
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, http.MethodDelete, r.Method)
 				assert.Equal(t, "/api/v1/torrents/"+testInfoHash, r.URL.Path)
+				assert.Empty(t, r.URL.Query().Get("files"))
+
+				_ = json.NewEncoder(w).Encode(api.RemoveTorrentResponse{})
+			},
+		},
+		{
+			Name:        "delete files",
+			DeleteFiles: true,
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, http.MethodDelete, r.Method)
+				assert.Equal(t, "/api/v1/torrents/"+testInfoHash, r.URL.Path)
+				assert.Equal(t, "true", r.URL.Query().Get("files"))
 
 				_ = json.NewEncoder(w).Encode(api.RemoveTorrentResponse{})
 			},
@@ -303,7 +316,7 @@ func TestClient_Remove(t *testing.T) {
 			c, err := client.New(server.URL)
 			require.NoError(t, err)
 
-			err = c.Remove(t.Context(), testInfoHash)
+			err = c.Remove(t.Context(), testInfoHash, tc.DeleteFiles)
 			if tc.ExpectNotFound {
 				assert.True(t, client.IsNotFound(err))
 				return

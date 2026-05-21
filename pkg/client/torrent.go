@@ -146,9 +146,16 @@ func (c *Client) Get(ctx context.Context, hash string) (Torrent, error) {
 	return fromAPI(response.Torrent), nil
 }
 
-// Remove removes a managed torrent identified by hash.
-func (c *Client) Remove(ctx context.Context, hash string) error {
-	_, err := do[api.RemoveTorrentResponse](ctx, c, http.MethodDelete, path.Join("/api/v1/torrents", hash), nil)
+// Remove removes a managed torrent identified by hash. When deleteFiles
+// is true the server is also asked to remove the torrent's downloaded
+// content from disk.
+func (c *Client) Remove(ctx context.Context, hash string, deleteFiles bool) error {
+	endpoint := path.Join("/api/v1/torrents", hash)
+	if deleteFiles {
+		endpoint += "?files=true"
+	}
+
+	_, err := do[api.RemoveTorrentResponse](ctx, c, http.MethodDelete, endpoint, nil)
 	return err
 }
 

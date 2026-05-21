@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/dsb-labs/torrents/internal/server/api"
@@ -53,8 +54,11 @@ func do[Response any](ctx context.Context, c *Client, method, endpoint string, r
 func doBody[Response any](ctx context.Context, c *Client, method, endpoint string, body io.Reader, contentType string) (Response, error) {
 	var zero Response
 
+	pathPart, query, _ := strings.Cut(endpoint, "?")
+
 	target := *c.base
-	target.Path = path.Join(target.Path, endpoint)
+	target.Path = path.Join(target.Path, pathPart)
+	target.RawQuery = query
 
 	req, err := http.NewRequestWithContext(ctx, method, target.String(), body)
 	if err != nil {

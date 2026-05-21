@@ -1,0 +1,50 @@
+package script
+
+// DeleteDialog wires the page-scoped <dialog id="delete-dialog"> so the
+// detail-page Delete button and the bulk-toolbar Delete action can share
+// one confirmation UI. It exposes a single global, window.openDeleteDialog,
+// which populates the summary text and checkbox state for the given
+// selection and invokes the supplied callback with the user's choice when
+// the dialog is confirmed.
+//
+// The checkbox is locked on (disabled + checked) when no selected torrent
+// is complete, since the service rule removes partials regardless and a
+// user-toggleable "also delete files" would be misleading.
+templ DeleteDialog() {
+	<script>
+		(function() {
+			const dialog = document.getElementById('delete-dialog');
+			if (!dialog) return;
+
+			const summary = document.getElementById('delete-dialog-summary');
+			const checkbox = document.getElementById('delete-dialog-files');
+			const confirmBtn = document.getElementById('delete-dialog-confirm');
+
+			let onConfirm = null;
+
+			window.openDeleteDialog = function(opts, callback) {
+				const hashes = opts.hashes || [];
+				const anyComplete = !!opts.anyComplete;
+				const noun = hashes.length === 1 ? 'torrent' : (hashes.length + ' torrents');
+				summary.textContent = 'Delete ' + noun + '?';
+				checkbox.checked = !anyComplete;
+				checkbox.disabled = !anyComplete;
+				onConfirm = callback;
+				dialog.showModal();
+			};
+
+			confirmBtn.addEventListener('click', function() {
+				const cb = onConfirm;
+				const deleteFiles = checkbox.checked;
+				onConfirm = null;
+				if (cb) cb(deleteFiles);
+			});
+
+			dialog.addEventListener('close', function() {
+				if (dialog.returnValue !== 'confirm') {
+					onConfirm = null;
+				}
+			});
+		})();
+	</script>
+}

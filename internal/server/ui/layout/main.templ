@@ -1,6 +1,9 @@
 package layout
 
-import "github.com/dsb-labs/torrents/internal/server/ui/component"
+import (
+	"github.com/dsb-labs/torrents/internal/server/ui/component"
+	"github.com/dsb-labs/torrents/internal/server/ui/script"
+)
 
 type (
 	// The MainProps type contains fields used to configure the Main layout.
@@ -45,6 +48,8 @@ templ Main(props MainProps) {
 			<main class="mx-auto max-w-6xl px-4 py-6 space-y-6 sm:px-6 sm:py-8 sm:space-y-8">
 				@props.Body
 			</main>
+			@component.DeleteDialog()
+			@script.DeleteDialog()
 			for _, s := range props.Scripts {
 				@s
 			}

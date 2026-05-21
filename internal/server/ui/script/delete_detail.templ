@@ -1,0 +1,29 @@
+package script
+
+// DeleteDetail wires the torrent-detail page's Delete button to the
+// shared delete dialog. On confirm it sends the DELETE request with
+// the right ?files= flag and navigates back to the list on success.
+// Uses document-level event delegation because ShowDetail is the
+// HTMX poll target and the button is re-rendered every second.
+templ DeleteDetail() {
+	<script>
+		(function() {
+			document.addEventListener('click', function(evt) {
+				const button = evt.target.closest('#detail-delete-button');
+				if (!button) return;
+
+				const hash = button.dataset.infoHash;
+				const complete = button.dataset.complete === 'true';
+				window.openDeleteDialog({ hashes: [hash], anyComplete: complete }, function(deleteFiles) {
+					button.classList.add('htmx-request');
+					fetch('/ui/torrents/' + hash + '?files=' + deleteFiles, { method: 'DELETE' }).then(function(resp) {
+						button.classList.remove('htmx-request');
+						if (resp.ok) {
+							window.location = '/';
+						}
+					});
+				});
+			});
+		})();
+	</script>
+}

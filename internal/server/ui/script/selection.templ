@@ -103,6 +103,10 @@ templ Selection() {
 				});
 			}
 
+			function selectedRows() {
+				return rows().filter(cb => cb.checked).map(cb => cb.closest('li'));
+			}
+
 			document.addEventListener('click', function(evt) {
 				const action = evt.target.closest('#toolbar-pause, #toolbar-resume, #toolbar-delete');
 				if (!action) return;
@@ -114,9 +118,10 @@ templ Selection() {
 				} else if (action.id === 'toolbar-delete') {
 					const hashes = selectedHashes();
 					if (hashes.length === 0) return;
-					const noun = hashes.length === 1 ? 'torrent' : 'torrents';
-					if (!confirm('Delete ' + hashes.length + ' ' + noun + '?')) return;
-					bulk('DELETE', '');
+					const anyComplete = selectedRows().some(li => li && li.dataset.complete === 'true');
+					window.openDeleteDialog({ hashes: hashes, anyComplete: anyComplete }, function(deleteFiles) {
+						bulk('DELETE', '?files=' + deleteFiles);
+					});
 				}
 			});
 

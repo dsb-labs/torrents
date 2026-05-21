@@ -229,9 +229,14 @@ func (h *TorrentHandler) Resume(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete removes a torrent and returns an empty body so HTMX removes the row.
+// The "files" query parameter controls whether the torrent's downloaded
+// content is also removed from disk; the service overrides false to true
+// for incomplete torrents regardless of the request.
 func (h *TorrentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	hash := r.PathValue("hash")
-	if err := h.torrents.Remove(r.Context(), hash, false); err != nil {
+	deleteFiles := r.URL.Query().Get("files") == "true"
+
+	if err := h.torrents.Remove(r.Context(), hash, deleteFiles); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

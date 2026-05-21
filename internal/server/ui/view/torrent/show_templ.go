@@ -10,10 +10,12 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/dsb-labs/torrents/internal/server/service"
 	"github.com/dsb-labs/torrents/internal/server/ui/component"
 	"github.com/dsb-labs/torrents/internal/server/ui/layout"
+	"github.com/dsb-labs/torrents/internal/server/ui/script"
 )
 
 type (
@@ -49,8 +51,9 @@ func Show(model ShowViewModel) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = layout.Main(layout.MainProps{
-			Title: showTitle(model.Torrent),
-			Body:  ShowDetail(model),
+			Title:   showTitle(model.Torrent),
+			Body:    ShowDetail(model),
+			Scripts: []templ.Component{script.DeleteDetail()},
 		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -87,7 +90,7 @@ func ShowDetail(model ShowViewModel) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue("/ui/torrents/" + model.Torrent.InfoHash)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/show.templ`, Line: 32, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/show.templ`, Line: 35, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 		if templ_7745c5c3_Err != nil {
@@ -108,7 +111,7 @@ func ShowDetail(model ShowViewModel) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(displayName(model.Torrent))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/show.templ`, Line: 41, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/show.templ`, Line: 44, Col: 83}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -148,15 +151,13 @@ func ShowDetail(model ShowViewModel) templ.Component {
 			}
 		}
 		templ_7745c5c3_Err = component.ActionButton(component.ActionButtonProps{
+			ID:    "detail-delete-button",
 			Label: "Delete",
 			Icon:  component.IconTrash(),
 			Class: "border-red-300 bg-white text-red-700 hover:bg-red-50 disabled:cursor-wait disabled:opacity-75 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/30",
 			Attrs: templ.Attributes{
-				"hx-delete":            "/ui/torrents/" + model.Torrent.InfoHash,
-				"hx-confirm":           "Delete this torrent?",
-				"hx-swap":              "none",
-				"hx-disabled-elt":      "this",
-				"hx-on::after-request": "if(event.detail.successful) window.location = '/'",
+				"data-info-hash": model.Torrent.InfoHash,
+				"data-complete":  detailComplete(model.Torrent),
 			},
 		}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
@@ -261,7 +262,7 @@ func metadataRow(label, value string, mono bool) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/show.templ`, Line: 118, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/show.templ`, Line: 119, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -279,7 +280,7 @@ func metadataRow(label, value string, mono bool) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/show.templ`, Line: 120, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/show.templ`, Line: 121, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -297,7 +298,7 @@ func metadataRow(label, value string, mono bool) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/show.templ`, Line: 122, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/ui/view/torrent/show.templ`, Line: 123, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -321,6 +322,10 @@ func showTitle(t service.Torrent) string {
 		return t.Name
 	}
 	return "Torrent detail"
+}
+
+func detailComplete(t service.Torrent) string {
+	return strconv.FormatBool(t.Length > 0 && t.BytesCompleted >= t.Length)
 }
 
 func displayName(t service.Torrent) string {

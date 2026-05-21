@@ -37,7 +37,7 @@ func Command() *cobra.Command {
 
 	flags := cmd.Flags()
 	flags.StringVarP(&address, "address", "a", "http://localhost:7373", "URL of the torrents server")
-	flags.BoolVar(&deleteFiles, "delete-files", false, "also remove the torrent's downloaded files from disk (ignored when the torrent is incomplete; partials are always removed)")
+	flags.BoolVar(&deleteFiles, "delete-files", false, "delete files")
 
 	return cmd
 }

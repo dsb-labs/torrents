@@ -30,6 +30,7 @@ templ TorrentRow(props TorrentRowProps) {
 		id={ "torrent-" + props.Torrent.InfoHash }
 		data-info-hash={ props.Torrent.InfoHash }
 		data-paused={ strconv.FormatBool(props.Torrent.Paused) }
+		data-complete={ strconv.FormatBool(props.Torrent.Length > 0 && props.Torrent.BytesCompleted >= props.Torrent.Length) }
 		class="flex items-start gap-3 p-4 has-[.row-select:checked]:bg-indigo-50 dark:has-[.row-select:checked]:bg-indigo-900/20 md:items-center md:gap-4 md:px-6 md:py-3"
 	>
 		<input

@@ -11,10 +11,8 @@ import (
 
 // Command returns the "delete" command used to delete a managed torrent.
 func Command() *cobra.Command {
-	var (
-		address     string
-		deleteFiles bool
-	)
+	var address string
+	var deleteFiles bool
 
 	cmd := &cobra.Command{
 		Use:     "delete <hash>",

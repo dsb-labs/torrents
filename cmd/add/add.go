@@ -15,11 +15,9 @@ import (
 // Command returns the "add" command used to add a torrent by magnet URI
 // or by uploading a .torrent metainfo file.
 func Command() *cobra.Command {
-	var (
-		address   string
-		label     string
-		targetDir string
-	)
+	var address string
+	var label string
+	var targetDir string
 
 	cmd := &cobra.Command{
 		Use:   "add <magnet|file>",

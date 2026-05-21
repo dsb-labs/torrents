@@ -153,8 +153,16 @@ func (e *Engine) Remove(ctx context.Context, hash InfoHash, deleteFiles bool) er
 	t.Drop()
 
 	if deleteFiles && name != "" {
-		if err = os.RemoveAll(filepath.Join(e.dataDir, name)); err != nil {
-			return fmt.Errorf("failed to remove torrent data: %w", err)
+		// Anacrolix's default file storage uses ".part" suffixes for
+		// not-yet-completed pieces, which for single-file torrents
+		// sit alongside (not under) the torrent's content path —
+		// hence the second RemoveAll. For multi-file torrents the
+		// .part files live inside <dataDir>/<name>/ and the first
+		// RemoveAll covers them.
+		for _, path := range []string{filepath.Join(e.dataDir, name), filepath.Join(e.dataDir, name+".part")} {
+			if err = os.RemoveAll(path); err != nil {
+				return fmt.Errorf("failed to remove torrent data: %w", err)
+			}
 		}
 	}
 

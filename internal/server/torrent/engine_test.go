@@ -154,6 +154,28 @@ func TestEngine_Remove(t *testing.T) {
 		assert.NoFileExists(t, contentDir)
 	})
 
+	t.Run("deletes sibling part file for single-file torrents", func(t *testing.T) {
+		mockClient := NewMockClient(t)
+		mockTorrent := NewMockTorrent(t)
+
+		mockClient.EXPECT().Torrent(testInfoHash()).Return(mockTorrent, true).Once()
+		mockTorrent.EXPECT().Name().Return("linux.iso").Once()
+		mockTorrent.EXPECT().Drop().Return().Once()
+
+		dataDir := t.TempDir()
+		partPath := filepath.Join(dataDir, "linux.iso.part")
+		require.NoError(t, os.WriteFile(partPath, []byte("partial"), 0o644))
+
+		engine := torrent.New(torrent.Config{
+			Logger:  newTestLogger(t),
+			Client:  mockClient,
+			DataDir: dataDir,
+		})
+
+		require.NoError(t, engine.Remove(t.Context(), testInfoHashHex, true))
+		assert.NoFileExists(t, partPath)
+	})
+
 	t.Run("not found", func(t *testing.T) {
 		mockClient := NewMockClient(t)
 		mockClient.EXPECT().Torrent(testInfoHash()).Return(nil, false).Once()

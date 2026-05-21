@@ -5,7 +5,8 @@ package script
 // updates the form's data-source attribute. The drop zone reflects drag /
 // selected state via data-state for Tailwind styling, accepts dropped
 // files, and shows the chosen filename inside the label once one is
-// selected.
+// selected. The submit handler disables the submit button so the form
+// can't be re-submitted while the upload is in flight.
 templ AddTorrent() {
 	<script>
 		(function() {
@@ -23,6 +24,11 @@ templ AddTorrent() {
 				const radio = evt.target.closest('input[type=radio][name=source]');
 				if (!radio || !radio.checked) return;
 				applySource(radio.value);
+			});
+
+			form.addEventListener('submit', function() {
+				const submit = form.querySelector('button[type=submit]');
+				if (submit) submit.disabled = true;
 			});
 
 			const checked = form.querySelector('input[type=radio][name=source]:checked');

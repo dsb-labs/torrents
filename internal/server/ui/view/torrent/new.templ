@@ -42,7 +42,6 @@ templ newContent(model NewViewModel) {
 			action="/torrents"
 			enctype="multipart/form-data"
 			data-source={ sourceOrDefault(model.Source) }
-			onsubmit="this.querySelector('button[type=submit]').disabled = true"
 			class="space-y-4 p-4 sm:p-6"
 		>
 			if model.Error != "" {

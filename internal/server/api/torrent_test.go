@@ -305,6 +305,7 @@ func TestTorrentAPI_Remove(t *testing.T) {
 
 	tt := []struct {
 		Name           string
+		Query          string
 		SetupMock      func(*MockTorrentService)
 		ExpectedStatus int
 		ExpectedBody   func(*testing.T, *httptest.ResponseRecorder)
@@ -320,6 +321,22 @@ func TestTorrentAPI_Remove(t *testing.T) {
 			},
 		},
 		{
+			Name:  "delete files",
+			Query: "?files=true",
+			SetupMock: func(svc *MockTorrentService) {
+				svc.EXPECT().Remove(mock.Anything, testInfoHash, true).Return(nil).Once()
+			},
+			ExpectedStatus: http.StatusOK,
+		},
+		{
+			Name:  "files=false stays false",
+			Query: "?files=false",
+			SetupMock: func(svc *MockTorrentService) {
+				svc.EXPECT().Remove(mock.Anything, testInfoHash, false).Return(nil).Once()
+			},
+			ExpectedStatus: http.StatusOK,
+		},
+		{
 			Name: "not found",
 			SetupMock: func(svc *MockTorrentService) {
 				svc.EXPECT().Remove(mock.Anything, testInfoHash, false).Return(service.ErrTorrentNotFound).Once()
@@ -333,7 +350,7 @@ func TestTorrentAPI_Remove(t *testing.T) {
 			svc := NewMockTorrentService(t)
 			tc.SetupMock(svc)
 
-			req := httptest.NewRequest(http.MethodDelete, "/api/v1/torrents/"+testInfoHash, nil)
+			req := httptest.NewRequest(http.MethodDelete, "/api/v1/torrents/"+testInfoHash+tc.Query, nil)
 			req.SetPathValue("hash", testInfoHash)
 			w := httptest.NewRecorder()
 

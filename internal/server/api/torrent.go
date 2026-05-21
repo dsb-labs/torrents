@@ -249,9 +249,13 @@ type (
 	RemoveTorrentResponse struct{}
 )
 
-// Remove removes a managed torrent.
+// Remove removes a managed torrent. The "files" query parameter controls
+// whether the torrent's downloaded content is also removed from disk;
+// it defaults to false and only "true" opts in.
 func (api *TorrentAPI) Remove(w http.ResponseWriter, r *http.Request) {
-	err := api.torrents.Remove(r.Context(), r.PathValue("hash"), false)
+	deleteFiles := r.URL.Query().Get("files") == "true"
+
+	err := api.torrents.Remove(r.Context(), r.PathValue("hash"), deleteFiles)
 	switch {
 	case errors.Is(err, service.ErrTorrentNotFound):
 		writeErrorf(w, http.StatusNotFound, "torrent %q does not exist", r.PathValue("hash"))

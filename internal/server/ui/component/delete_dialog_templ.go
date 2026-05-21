@@ -9,15 +9,16 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 // DeleteDialog renders the page-scoped delete-confirmation modal. It is a
-// native <dialog> element that the add_torrent / delete_dialog scripts
-// open via showModal(). The dialog contains a form with method="dialog",
-// so submitting any button inside automatically closes it — the script
-// then reads which submitter and whether the files checkbox was ticked.
+// native <dialog> element that the delete_dialog script opens via
+// showModal(). The dialog contains a form with method="dialog" so the
+// Cancel / Delete buttons close it automatically; the script reads the
+// "Keep files" checkbox at confirm time and runs the supplied callback.
 //
-// One instance is wired into the main layout so every page that uses the
-// layout can drive it without re-rendering the markup. The detail-page
-// Delete button and the bulk-toolbar Delete button both call the same
-// openDeleteDialog helper.
+// The "Keep files" option is only meaningful for completed torrents, so
+// the script hides the row entirely when no selected torrent has finished
+// downloading. The browser-default auto-margin centering is restored via
+// the explicit m-auto class because Tailwind's preflight resets the
+// margin: 0 on every element.
 func DeleteDialog() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -39,7 +40,7 @@ func DeleteDialog() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<dialog id=\"delete-dialog\" class=\"w-full max-w-md rounded-lg border border-gray-200 bg-white p-0 text-gray-900 shadow-xl backdrop:bg-black/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100\"><form method=\"dialog\" class=\"space-y-4 p-4 sm:p-6\"><h2 id=\"delete-dialog-summary\" class=\"text-base font-semibold\">Delete torrent(s)?</h2><label class=\"flex items-center gap-2 text-sm\"><input id=\"delete-dialog-files\" type=\"checkbox\" class=\"h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600\"> <span>Delete files</span></label><div class=\"flex items-center justify-end gap-2\"><button value=\"cancel\" formnovalidate class=\"inline-flex items-center justify-center rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700\">Cancel</button> <button id=\"delete-dialog-confirm\" value=\"confirm\" class=\"inline-flex items-center justify-center rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-400\">Delete</button></div></form></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<dialog id=\"delete-dialog\" class=\"m-auto w-full max-w-md rounded-lg border border-gray-200 bg-white p-0 text-gray-900 shadow-xl backdrop:bg-black/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100\"><form method=\"dialog\" class=\"space-y-4 p-4 sm:p-6\"><h2 id=\"delete-dialog-summary\" class=\"text-base font-semibold\">Delete torrent(s)?</h2><label id=\"delete-dialog-keep-row\" class=\"flex items-center gap-2 text-sm\"><input id=\"delete-dialog-keep\" type=\"checkbox\" checked class=\"h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600\"> <span>Keep files</span></label><div class=\"flex items-center justify-end gap-2\"><button value=\"cancel\" formnovalidate class=\"inline-flex items-center justify-center rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700\">Cancel</button> <button id=\"delete-dialog-confirm\" value=\"confirm\" class=\"inline-flex items-center justify-center rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-red-500 dark:hover:bg-red-400\">Delete</button></div></form></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

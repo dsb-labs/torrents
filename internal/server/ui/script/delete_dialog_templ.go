@@ -11,13 +11,14 @@ import templruntime "github.com/a-h/templ/runtime"
 // DeleteDialog wires the page-scoped <dialog id="delete-dialog"> so the
 // detail-page Delete button and the bulk-toolbar Delete action can share
 // one confirmation UI. It exposes a single global, window.openDeleteDialog,
-// which populates the summary text and checkbox state for the given
-// selection and invokes the supplied callback with the user's choice when
-// the dialog is confirmed.
+// which populates the summary text and the "Keep files" checkbox state
+// for the given selection and invokes the supplied callback with the
+// user's choice when the dialog is confirmed.
 //
-// The checkbox is locked on (disabled + checked) when no selected torrent
-// is complete, since the service rule removes partials regardless and a
-// user-toggleable "also delete files" would be misleading.
+// The "Keep files" row is hidden entirely when none of the selected
+// torrents has finished downloading, because the service-side rule
+// removes partials regardless of the request — a toggle here would
+// be misleading.
 func DeleteDialog() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -39,7 +40,7 @@ func DeleteDialog() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n\t\t(function() {\n\t\t\tconst dialog = document.getElementById('delete-dialog');\n\t\t\tif (!dialog) return;\n\n\t\t\tconst summary = document.getElementById('delete-dialog-summary');\n\t\t\tconst checkbox = document.getElementById('delete-dialog-files');\n\t\t\tconst confirmBtn = document.getElementById('delete-dialog-confirm');\n\n\t\t\tlet onConfirm = null;\n\n\t\t\twindow.openDeleteDialog = function(opts, callback) {\n\t\t\t\tconst hashes = opts.hashes || [];\n\t\t\t\tconst anyComplete = !!opts.anyComplete;\n\t\t\t\tconst noun = hashes.length === 1 ? 'torrent' : (hashes.length + ' torrents');\n\t\t\t\tsummary.textContent = 'Delete ' + noun + '?';\n\t\t\t\tcheckbox.checked = !anyComplete;\n\t\t\t\tcheckbox.disabled = !anyComplete;\n\t\t\t\tonConfirm = callback;\n\t\t\t\tdialog.showModal();\n\t\t\t};\n\n\t\t\tconfirmBtn.addEventListener('click', function() {\n\t\t\t\tconst cb = onConfirm;\n\t\t\t\tconst deleteFiles = checkbox.checked;\n\t\t\t\tonConfirm = null;\n\t\t\t\tif (cb) cb(deleteFiles);\n\t\t\t});\n\n\t\t\tdialog.addEventListener('close', function() {\n\t\t\t\tif (dialog.returnValue !== 'confirm') {\n\t\t\t\t\tonConfirm = null;\n\t\t\t\t}\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n\t\t(function() {\n\t\t\tconst dialog = document.getElementById('delete-dialog');\n\t\t\tif (!dialog) return;\n\n\t\t\tconst summary = document.getElementById('delete-dialog-summary');\n\t\t\tconst keepRow = document.getElementById('delete-dialog-keep-row');\n\t\t\tconst keepCheckbox = document.getElementById('delete-dialog-keep');\n\t\t\tconst confirmBtn = document.getElementById('delete-dialog-confirm');\n\n\t\t\tlet onConfirm = null;\n\n\t\t\twindow.openDeleteDialog = function(opts, callback) {\n\t\t\t\tconst hashes = opts.hashes || [];\n\t\t\t\tconst anyComplete = !!opts.anyComplete;\n\t\t\t\tconst noun = hashes.length === 1 ? 'torrent' : (hashes.length + ' torrents');\n\t\t\t\tsummary.textContent = 'Delete ' + noun + '?';\n\t\t\t\tkeepRow.hidden = !anyComplete;\n\t\t\t\tkeepCheckbox.checked = true;\n\t\t\t\tonConfirm = callback;\n\t\t\t\tdialog.showModal();\n\t\t\t};\n\n\t\t\tconfirmBtn.addEventListener('click', function() {\n\t\t\t\tconst cb = onConfirm;\n\t\t\t\tconst deleteFiles = !keepRow.hidden && !keepCheckbox.checked;\n\t\t\t\tonConfirm = null;\n\t\t\t\tif (cb) cb(deleteFiles);\n\t\t\t});\n\n\t\t\tdialog.addEventListener('close', function() {\n\t\t\t\tif (dialog.returnValue !== 'confirm') {\n\t\t\t\t\tonConfirm = null;\n\t\t\t\t}\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

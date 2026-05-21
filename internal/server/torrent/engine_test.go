@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"testing"
 
 	anacrolix "github.com/anacrolix/torrent"
@@ -107,19 +109,49 @@ func TestEngine_AddFile(t *testing.T) {
 func TestEngine_Remove(t *testing.T) {
 	t.Parallel()
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("keeps files", func(t *testing.T) {
 		mockClient := NewMockClient(t)
 		mockTorrent := NewMockTorrent(t)
 
 		mockClient.EXPECT().Torrent(testInfoHash()).Return(mockTorrent, true).Once()
+		mockTorrent.EXPECT().Name().Return("linux.iso").Once()
 		mockTorrent.EXPECT().Drop().Return().Once()
 
+		dataDir := t.TempDir()
+		contentPath := filepath.Join(dataDir, "linux.iso")
+		require.NoError(t, os.WriteFile(contentPath, []byte("x"), 0o644))
+
 		engine := torrent.New(torrent.Config{
-			Logger: newTestLogger(t),
-			Client: mockClient,
+			Logger:  newTestLogger(t),
+			Client:  mockClient,
+			DataDir: dataDir,
 		})
 
-		require.NoError(t, engine.Remove(t.Context(), testInfoHashHex))
+		require.NoError(t, engine.Remove(t.Context(), testInfoHashHex, false))
+		assert.FileExists(t, contentPath)
+	})
+
+	t.Run("deletes files", func(t *testing.T) {
+		mockClient := NewMockClient(t)
+		mockTorrent := NewMockTorrent(t)
+
+		mockClient.EXPECT().Torrent(testInfoHash()).Return(mockTorrent, true).Once()
+		mockTorrent.EXPECT().Name().Return("linux-amd64").Once()
+		mockTorrent.EXPECT().Drop().Return().Once()
+
+		dataDir := t.TempDir()
+		contentDir := filepath.Join(dataDir, "linux-amd64")
+		require.NoError(t, os.MkdirAll(contentDir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(contentDir, "a.iso"), []byte("x"), 0o644))
+
+		engine := torrent.New(torrent.Config{
+			Logger:  newTestLogger(t),
+			Client:  mockClient,
+			DataDir: dataDir,
+		})
+
+		require.NoError(t, engine.Remove(t.Context(), testInfoHashHex, true))
+		assert.NoFileExists(t, contentDir)
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -131,7 +163,7 @@ func TestEngine_Remove(t *testing.T) {
 			Client: mockClient,
 		})
 
-		err := engine.Remove(t.Context(), testInfoHashHex)
+		err := engine.Remove(t.Context(), testInfoHashHex, false)
 		assert.ErrorIs(t, err, torrent.ErrNotFound)
 	})
 
@@ -141,7 +173,7 @@ func TestEngine_Remove(t *testing.T) {
 			Client: NewMockClient(t),
 		})
 
-		err := engine.Remove(t.Context(), "not-a-valid-hash")
+		err := engine.Remove(t.Context(), "not-a-valid-hash", false)
 		assert.ErrorContains(t, err, "invalid info hash")
 	})
 }

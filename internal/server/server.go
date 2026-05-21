@@ -48,15 +48,18 @@ func Run(ctx context.Context, config Config) error {
 		return fmt.Errorf("failed to load piece completion cache: %w", err)
 	}
 
-	client, err := torrent.NewClient(logger, filepath.Join(config.Data.Directory, "downloads"), pieces)
+	downloadsDir := filepath.Join(config.Data.Directory, "downloads")
+
+	client, err := torrent.NewClient(logger, downloadsDir, pieces)
 	if err != nil {
 		return fmt.Errorf("failed to start torrent client: %w", err)
 	}
 	defer client.Close()
 
 	engine := torrent.New(torrent.Config{
-		Logger: logger,
-		Client: client,
+		Logger:  logger,
+		Client:  client,
+		DataDir: downloadsDir,
 	})
 
 	torrents := service.NewTorrentService(logger, engine, database.NewTorrentRepository(db), pieces)

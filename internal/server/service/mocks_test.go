@@ -235,16 +235,16 @@ func (_c *MockTorrentEngine_Files_Call) RunAndReturn(run func(hash torrent.InfoH
 }
 
 // Remove provides a mock function for the type MockTorrentEngine
-func (_mock *MockTorrentEngine) Remove(ctx context.Context, hash torrent.InfoHash) error {
-	ret := _mock.Called(ctx, hash)
+func (_mock *MockTorrentEngine) Remove(ctx context.Context, hash torrent.InfoHash, deleteFiles bool) error {
+	ret := _mock.Called(ctx, hash, deleteFiles)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Remove")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, torrent.InfoHash) error); ok {
-		r0 = returnFunc(ctx, hash)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, torrent.InfoHash, bool) error); ok {
+		r0 = returnFunc(ctx, hash, deleteFiles)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -259,11 +259,12 @@ type MockTorrentEngine_Remove_Call struct {
 // Remove is a helper method to define mock.On call
 //   - ctx context.Context
 //   - hash torrent.InfoHash
-func (_e *MockTorrentEngine_Expecter) Remove(ctx interface{}, hash interface{}) *MockTorrentEngine_Remove_Call {
-	return &MockTorrentEngine_Remove_Call{Call: _e.mock.On("Remove", ctx, hash)}
+//   - deleteFiles bool
+func (_e *MockTorrentEngine_Expecter) Remove(ctx interface{}, hash interface{}, deleteFiles interface{}) *MockTorrentEngine_Remove_Call {
+	return &MockTorrentEngine_Remove_Call{Call: _e.mock.On("Remove", ctx, hash, deleteFiles)}
 }
 
-func (_c *MockTorrentEngine_Remove_Call) Run(run func(ctx context.Context, hash torrent.InfoHash)) *MockTorrentEngine_Remove_Call {
+func (_c *MockTorrentEngine_Remove_Call) Run(run func(ctx context.Context, hash torrent.InfoHash, deleteFiles bool)) *MockTorrentEngine_Remove_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -273,9 +274,14 @@ func (_c *MockTorrentEngine_Remove_Call) Run(run func(ctx context.Context, hash 
 		if args[1] != nil {
 			arg1 = args[1].(torrent.InfoHash)
 		}
+		var arg2 bool
+		if args[2] != nil {
+			arg2 = args[2].(bool)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -286,7 +292,7 @@ func (_c *MockTorrentEngine_Remove_Call) Return(err error) *MockTorrentEngine_Re
 	return _c
 }
 
-func (_c *MockTorrentEngine_Remove_Call) RunAndReturn(run func(ctx context.Context, hash torrent.InfoHash) error) *MockTorrentEngine_Remove_Call {
+func (_c *MockTorrentEngine_Remove_Call) RunAndReturn(run func(ctx context.Context, hash torrent.InfoHash, deleteFiles bool) error) *MockTorrentEngine_Remove_Call {
 	_c.Call.Return(run)
 	return _c
 }

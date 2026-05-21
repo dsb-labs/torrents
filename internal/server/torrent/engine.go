@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
+	"path/filepath"
 
 	anacrolix "github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -54,8 +56,9 @@ type (
 
 	// The Engine type provides info-hash-keyed operations against a torrent client.
 	Engine struct {
-		logger *slog.Logger
-		client Client
+		logger  *slog.Logger
+		client  Client
+		dataDir string
 	}
 
 	// The Config type contains fields used to construct an Engine.
@@ -64,14 +67,18 @@ type (
 		Logger *slog.Logger
 		// The torrent client used to perform operations.
 		Client Client
+		// The data directory under which downloaded content is written.
+		// Used to locate on-disk files when Remove is asked to delete them.
+		DataDir string
 	}
 )
 
 // New returns an Engine that operates against the Client in config.
 func New(config Config) *Engine {
 	return &Engine{
-		logger: config.Logger.With("component", "engine"),
-		client: config.Client,
+		logger:  config.Logger.With("component", "engine"),
+		client:  config.Client,
+		dataDir: config.DataDir,
 	}
 }
 
@@ -129,10 +136,11 @@ func (e *Engine) AddFile(ctx context.Context, r io.Reader) (InfoHash, error) {
 	return InfoHash(t.InfoHash().HexString()), nil
 }
 
-// Remove stops tracking the torrent identified by hash. Downloaded files are
-// left on disk. Returns ErrNotFound when the engine isn't tracking the
-// given torrent.
-func (e *Engine) Remove(ctx context.Context, hash InfoHash) error {
+// Remove stops tracking the torrent identified by hash. When deleteFiles
+// is false, downloaded content is left on disk; when true, the torrent's
+// content directory under the engine's data dir is removed. Returns
+// ErrNotFound when the engine isn't tracking the given torrent.
+func (e *Engine) Remove(ctx context.Context, hash InfoHash, deleteFiles bool) error {
 	t, ok, err := e.find(hash)
 	switch {
 	case err != nil:
@@ -141,7 +149,14 @@ func (e *Engine) Remove(ctx context.Context, hash InfoHash) error {
 		return ErrNotFound
 	}
 
+	name := t.Name()
 	t.Drop()
+
+	if deleteFiles && name != "" {
+		if err = os.RemoveAll(filepath.Join(e.dataDir, name)); err != nil {
+			return fmt.Errorf("failed to remove torrent data: %w", err)
+		}
+	}
 
 	return nil
 }

@@ -32,8 +32,9 @@ type (
 		AddMagnet(ctx context.Context, uri string) (torrent.InfoHash, error)
 		// AddFile should add a torrent from a .torrent metainfo file read from r.
 		AddFile(ctx context.Context, r io.Reader) (torrent.InfoHash, error)
-		// Remove should stop tracking the torrent identified by hash.
-		Remove(ctx context.Context, hash torrent.InfoHash) error
+		// Remove should stop tracking the torrent identified by hash, and
+		// when deleteFiles is true also remove its on-disk content.
+		Remove(ctx context.Context, hash torrent.InfoHash, deleteFiles bool) error
 		// Snapshot should return the current live state of the torrent identified by hash.
 		Snapshot(hash torrent.InfoHash) (torrent.Progress, error)
 		// Files should return the per-file progress for the torrent identified by hash.
@@ -222,7 +223,7 @@ func (s *TorrentService) List(ctx context.Context) ([]Torrent, error) {
 // Remove removes the torrent identified by infoHash from both the engine and the
 // repository. Returns ErrTorrentNotFound when no such torrent is managed.
 func (s *TorrentService) Remove(ctx context.Context, infoHash string) error {
-	err := s.engine.Remove(ctx, torrent.InfoHash(infoHash))
+	err := s.engine.Remove(ctx, torrent.InfoHash(infoHash), false)
 	switch {
 	case errors.Is(err, torrent.ErrNotFound):
 		// Engine doesn't know about it; fall through to delete the row.
@@ -251,7 +252,7 @@ func (s *TorrentService) Remove(ctx context.Context, infoHash string) error {
 func (s *TorrentService) Pause(ctx context.Context, infoHash string) error {
 	s.persistBytesCompleted(ctx, torrent.InfoHash(infoHash))
 
-	err := s.engine.Remove(ctx, torrent.InfoHash(infoHash))
+	err := s.engine.Remove(ctx, torrent.InfoHash(infoHash), false)
 	switch {
 	case errors.Is(err, torrent.ErrNotFound):
 		// Engine wasn't tracking it (already paused or never added); fall through.

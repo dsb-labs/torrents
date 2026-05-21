@@ -11,7 +11,10 @@ import (
 
 // Command returns the "delete" command used to delete a managed torrent.
 func Command() *cobra.Command {
-	var address string
+	var (
+		address     string
+		deleteFiles bool
+	)
 
 	cmd := &cobra.Command{
 		Use:     "delete <hash>",
@@ -24,7 +27,7 @@ func Command() *cobra.Command {
 				return err
 			}
 
-			if err = c.Remove(cmd.Context(), args[0], false); err != nil {
+			if err = c.Remove(cmd.Context(), args[0], deleteFiles); err != nil {
 				return fmt.Errorf("failed to delete torrent: %w", err)
 			}
 
@@ -32,7 +35,9 @@ func Command() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&address, "address", "a", "http://localhost:7373", "URL of the torrents server")
+	flags := cmd.Flags()
+	flags.StringVarP(&address, "address", "a", "http://localhost:7373", "URL of the torrents server")
+	flags.BoolVar(&deleteFiles, "delete-files", false, "also remove the torrent's downloaded files from disk (ignored when the torrent is incomplete; partials are always removed)")
 
 	return cmd
 }

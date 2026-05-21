@@ -312,7 +312,7 @@ func TestTorrentAPI_Remove(t *testing.T) {
 		{
 			Name: "success",
 			SetupMock: func(svc *MockTorrentService) {
-				svc.EXPECT().Remove(mock.Anything, testInfoHash).Return(nil).Once()
+				svc.EXPECT().Remove(mock.Anything, testInfoHash, false).Return(nil).Once()
 			},
 			ExpectedStatus: http.StatusOK,
 			ExpectedBody: func(t *testing.T, w *httptest.ResponseRecorder) {
@@ -322,7 +322,7 @@ func TestTorrentAPI_Remove(t *testing.T) {
 		{
 			Name: "not found",
 			SetupMock: func(svc *MockTorrentService) {
-				svc.EXPECT().Remove(mock.Anything, testInfoHash).Return(service.ErrTorrentNotFound).Once()
+				svc.EXPECT().Remove(mock.Anything, testInfoHash, false).Return(service.ErrTorrentNotFound).Once()
 			},
 			ExpectedStatus: http.StatusNotFound,
 		},

@@ -31,8 +31,10 @@ type (
 		Files(ctx context.Context, infoHash string) ([]service.File, error)
 		// List should return every managed torrent.
 		List(ctx context.Context) ([]service.Torrent, error)
-		// Remove should remove the torrent identified by infoHash.
-		Remove(ctx context.Context, infoHash string) error
+		// Remove should remove the torrent identified by infoHash. When
+		// deleteFiles is true, the torrent's content is also removed
+		// from disk.
+		Remove(ctx context.Context, infoHash string, deleteFiles bool) error
 		// Pause should pause the torrent identified by infoHash.
 		Pause(ctx context.Context, infoHash string) error
 		// Resume should resume the torrent identified by infoHash.
@@ -229,7 +231,7 @@ func (h *TorrentHandler) Resume(w http.ResponseWriter, r *http.Request) {
 // Delete removes a torrent and returns an empty body so HTMX removes the row.
 func (h *TorrentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	hash := r.PathValue("hash")
-	if err := h.torrents.Remove(r.Context(), hash); err != nil {
+	if err := h.torrents.Remove(r.Context(), hash, false); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

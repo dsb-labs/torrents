@@ -25,8 +25,10 @@ type (
 		Get(ctx context.Context, infoHash string) (service.Torrent, error)
 		// List should return every managed torrent.
 		List(ctx context.Context) ([]service.Torrent, error)
-		// Remove should remove the torrent identified by infoHash.
-		Remove(ctx context.Context, infoHash string) error
+		// Remove should remove the torrent identified by infoHash. When
+		// deleteFiles is true, the torrent's content is also removed
+		// from disk.
+		Remove(ctx context.Context, infoHash string, deleteFiles bool) error
 		// Pause should pause the torrent identified by infoHash.
 		Pause(ctx context.Context, infoHash string) error
 		// Resume should resume the torrent identified by infoHash.
@@ -249,7 +251,7 @@ type (
 
 // Remove removes a managed torrent.
 func (api *TorrentAPI) Remove(w http.ResponseWriter, r *http.Request) {
-	err := api.torrents.Remove(r.Context(), r.PathValue("hash"))
+	err := api.torrents.Remove(r.Context(), r.PathValue("hash"), false)
 	switch {
 	case errors.Is(err, service.ErrTorrentNotFound):
 		writeErrorf(w, http.StatusNotFound, "torrent %q does not exist", r.PathValue("hash"))

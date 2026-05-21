@@ -221,9 +221,23 @@ func (s *TorrentService) List(ctx context.Context) ([]Torrent, error) {
 }
 
 // Remove removes the torrent identified by infoHash from both the engine and the
-// repository. Returns ErrTorrentNotFound when no such torrent is managed.
-func (s *TorrentService) Remove(ctx context.Context, infoHash string) error {
-	err := s.engine.Remove(ctx, torrent.InfoHash(infoHash), false)
+// repository. The deleteFiles flag controls whether the torrent's downloaded
+// content is removed from disk: it is always removed when the torrent is
+// incomplete (the partials are useless once the torrent is gone) and is only
+// respected when the torrent has completed. Returns ErrTorrentNotFound when
+// no such torrent is managed.
+func (s *TorrentService) Remove(ctx context.Context, infoHash string, deleteFiles bool) error {
+	row, err := s.torrents.Get(ctx, infoHash)
+	switch {
+	case errors.Is(err, database.ErrTorrentNotFound):
+		return ErrTorrentNotFound
+	case err != nil:
+		return fmt.Errorf("failed to load torrent: %w", err)
+	}
+
+	actuallyDeleteFiles := deleteFiles || !s.isComplete(row)
+
+	err = s.engine.Remove(ctx, torrent.InfoHash(infoHash), actuallyDeleteFiles)
 	switch {
 	case errors.Is(err, torrent.ErrNotFound):
 		// Engine doesn't know about it; fall through to delete the row.
@@ -242,6 +256,16 @@ func (s *TorrentService) Remove(ctx context.Context, infoHash string) error {
 	s.pieces.Forget(infoHash)
 
 	return nil
+}
+
+// isComplete reports whether the torrent identified by row has finished
+// downloading. The engine's live snapshot is preferred; falls back to the
+// persisted row when the engine isn't tracking the torrent (e.g. paused).
+func (s *TorrentService) isComplete(row database.Torrent) bool {
+	if progress, err := s.engine.Snapshot(torrent.InfoHash(row.InfoHash)); err == nil && progress.Length > 0 {
+		return progress.BytesCompleted >= progress.Length
+	}
+	return row.Length > 0 && row.BytesCompleted >= row.Length
 }
 
 // Pause stops the torrent identified by infoHash by removing it from the engine

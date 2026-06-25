@@ -5,7 +5,7 @@ go 1.26
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/a-h/templ v0.3.1020
-	github.com/anacrolix/chansync v0.7.0
+	github.com/anacrolix/chansync v0.8.0
 	github.com/anacrolix/log v0.17.1-0.20251118025802-918f1157b7bb
 	github.com/anacrolix/torrent v1.61.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
